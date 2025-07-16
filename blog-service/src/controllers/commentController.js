@@ -1,6 +1,6 @@
 const commentService = require('../services/commentService');
 
-exports.addComment = async (req, res) => {
+const addComment = async (req, res) => {
   try {
     const { userId, text } = req.body;
     const comment = await commentService.addComment(req.params.blogId, userId, text);
@@ -10,7 +10,12 @@ exports.addComment = async (req, res) => {
   }
 };
 
-exports.getCommentsForBlog = async (req, res) => {
+const getCommentsForBlog = async (req, res) => {
   const comments = await commentService.getCommentsForBlog(req.params.blogId);
   res.json(comments);
+};
+
+module.exports = {
+  addComment,
+  getCommentsForBlog
 };

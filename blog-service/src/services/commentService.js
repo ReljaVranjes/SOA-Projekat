@@ -1,6 +1,6 @@
 const Comment = require('../models/Comment');
 
-exports.addComment = async (blogId, userId, text) => {
+const addComment = async (blogId, userId, text) => {
   const comment = new Comment({
     blogId,
     userId,
@@ -11,6 +11,11 @@ exports.addComment = async (blogId, userId, text) => {
   return await comment.save();
 };
 
-exports.getCommentsForBlog = async (blogId) => {
+const getCommentsForBlog = async (blogId) => {
   return await Comment.find({ blogId }).sort({ createdAt: -1 });
+};
+
+module.exports = {
+  addComment,
+  getCommentsForBlog
 };

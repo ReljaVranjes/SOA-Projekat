@@ -4,7 +4,7 @@ const blogController = require('../controllers/blogController');
 const { validateBlog } = require('../middleware/validation.js')
 
 router.post('/', validateBlog, blogController.createBlog);
-router.get('/', validateBlog, blogController.getAllBlogs);
-router.get('/:id', validateBlog, blogController.getBlogById);
+router.get('/', blogController.getAllBlogs);
+router.get('/:id', blogController.getBlogById);
 
 module.exports = router;
