@@ -37,6 +37,7 @@ func RegisterUser(user model.User) (string, error) {
 
 	// 4. Kreiraj JWT token
 	claims := jwt.MapClaims{
+		"id":	 user.ID,
 		"email": user.Email,
 		"role":  user.Role,
 		"exp":   time.Now().Add(time.Hour * 72).Unix(),
@@ -55,17 +56,18 @@ func RegisterUser(user model.User) (string, error) {
 func LoginUser(email, password string) (string, error) {
 	user, err := repo.FindUserByEmail(email)
 	if err != nil {
-		return "", errors.New("Korisnik ne postoji")
+		return "", errors.New("korisnik ne postoji")
 	}
 
 	// Proveri lozinku
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
 	if err != nil {
-		return "", errors.New("Pogrešna lozinka")
+		return "", errors.New("pogrešna lozinka")
 	}
 
 	// Generiši token
 	claims := jwt.MapClaims{
+		"id":	 user.ID,
 		"email": user.Email,
 		"role":  user.Role,
 		"exp":   time.Now().Add(time.Hour * 72).Unix(),
@@ -74,7 +76,7 @@ func LoginUser(email, password string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	signedToken, err := token.SignedString([]byte(os.Getenv("JWT_SECRET")))
 	if err != nil {
-		return "", errors.New("Greška pri generisanju tokena")
+		return "", errors.New("greška pri generisanju tokena")
 	}
 
 	return signedToken, nil
