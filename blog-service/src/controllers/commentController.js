@@ -2,7 +2,8 @@ const commentService = require('../services/commentService');
 
 const addComment = async (req, res) => {
   try {
-    const { userId, text } = req.body;
+    const userId = req.user.id; 
+    const { text } = req.body;
     const comment = await commentService.addComment(req.params.blogId, userId, text);
     res.status(201).json(comment);
   } catch (err) {

@@ -2,7 +2,12 @@ const blogService = require('../services/blogService');
 
 const createBlog = async (req, res) => {
   try {
-    const blog = await blogService.createBlog(req.body);
+    const authorId = req.user.id; 
+    const blogData = {
+      ...req.body,
+      authorId, 
+    };
+    const blog = await blogService.createBlog(blogData);
     res.status(201).json(blog);
   } catch (err) {
     res.status(500).json({ error: 'Failed to create blog', details: err.message });
@@ -22,7 +27,7 @@ const getBlogById = async (req, res) => {
 
 const likeBlog = async (req, res) => {
   try { 
-    const blog = await blogService.likeBlog(req.params.id, req.body.userId);
+    const blog = await blogService.likeBlog(req.params.id, req.user.id);
     res.json(blog);
   } catch (err) {
     res.status(500).json({ error: 'Failed to like blog', details: err.message });

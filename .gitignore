@@ -49,7 +49,3 @@ eagle.epf
 
 # file locks introduced since 7.x
 *.lck
-
-node_modules
-.env
-.dockerignore
