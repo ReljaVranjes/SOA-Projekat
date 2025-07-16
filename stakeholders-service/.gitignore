@@ -1,0 +1,19 @@
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# OS fajlovi
+.DS_Store
+
+# Go build
+bin/
+vendor/
+
+# Dependency files
+go.sum
+
+# Env vars
+.env
