@@ -4,6 +4,6 @@ const commentController = require('../controllers/commentController');
 const { validateComment } = require('../middleware/validation.js')
 
 router.post('/:blogId/comments', validateComment, commentController.addComment);
-router.get('/:blogId/comments', validateComment, commentController.getCommentsForBlog);
+router.get('/:blogId/comments', commentController.getCommentsForBlog);
 
 module.exports = router;

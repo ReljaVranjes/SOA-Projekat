@@ -11,7 +11,7 @@ const blogRoutes = require('./routes/blogRoutes');
 const commentRoutes = require('./routes/commentRoutes');
 
 app.use('/api/blogs', blogRoutes);
-app.use('/api/blogs', commentRoutes);
+app.use('/api/comments', commentRoutes);
 
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
