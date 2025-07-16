@@ -20,9 +20,19 @@ const getBlogById = async (req, res) => {
   res.json(blog);
 };
 
+const likeBlog = async (req, res) => {
+  try { 
+    const blog = await blogService.likeBlog(req.params.id, req.body.userId);
+    res.json(blog);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to like blog', details: err.message });
+  }
+};
+
 module.exports = {
   createBlog,
   getAllBlogs,
   getBlogById,
+  likeBlog
 }
 
