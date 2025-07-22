@@ -1,0 +1,37 @@
+version: "3.8"
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+    command: mongod --bind_ip_all
+    volumes:
+      - mongodb_data:/data/db
+
+  stakeholders-service:
+    build: ./stakeholders-service
+    container_name: stakeholders-service
+    ports:
+      - "4000:4000"
+    depends_on:
+      - mongodb
+    environment:
+      - MONGO_URI=mongodb://admin:password@mongodb:27017
+
+  blog-service:
+    build: ./blog-service
+    container_name: blog-service
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mongodb
+    environment:
+      - MONGO_URI=mongodb://admin:password@mongodb:27017
+
+volumes:
+  mongodb_data:
