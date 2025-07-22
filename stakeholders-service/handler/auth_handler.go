@@ -57,3 +57,53 @@ func Me(c *gin.Context) {
 	})
 }
 
+func GetProfile(c *gin.Context) {
+	email, exists := c.Get("email")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Email nije pronađen u tokenu"})
+		return
+	}
+
+	emailStr, ok := email.(string)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Neispravan format emaila"})
+		return
+	}
+
+	user, err := service.GetUserProfile(emailStr)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, user)
+}
+
+func UpdateProfile(c *gin.Context) {
+	email, exists := c.Get("email")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Email nije pronađen u tokenu"})
+		return
+	}
+
+	emailStr, ok := email.(string)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Neispravan format emaila"})
+		return
+	}
+
+	var profileData model.User
+	if err := c.ShouldBindJSON(&profileData); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Neispravan JSON format"})
+		return
+	}
+
+	updatedUser, err := service.UpdateUserProfile(emailStr, profileData)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, updatedUser)
+}
+
