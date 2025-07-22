@@ -45,3 +45,15 @@ func FindUserByEmail(email string) (model.User, error) {
 	err := collection.FindOne(ctx, bson.M{"email": email}).Decode(&user)
 	return user, err
 }
+
+func UpdateUserProfile(email string, updates bson.M) error {
+	collection := config.MongoDB.Collection("users")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	filter := bson.M{"email": email}
+	update := bson.M{"$set": updates}
+	
+	_, err := collection.UpdateOne(ctx, filter, update)
+	return err
+}
