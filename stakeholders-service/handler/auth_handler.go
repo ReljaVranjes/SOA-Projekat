@@ -13,7 +13,7 @@ func Register(c *gin.Context) {
 
 	// Pokušaj da parsiraš JSON body u User struct
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Loš JSON format"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -55,5 +55,45 @@ func Me(c *gin.Context) {
 		"email": email,
 		"role":  role,
 	})
+}
+
+func GetAllUsers(c *gin.Context) {
+	roleStr, exists := c.Get("role")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Neautorizovan pristup"})
+		return
+	}
+
+	role := model.UserRole(roleStr.(string))
+	users, err := service.GetAllUsersForAdmin(role)
+	if err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"users": users})
+}
+
+func BlockUser(c *gin.Context) {
+	roleStr, exists := c.Get("role")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Neautorizovan pristup"})
+		return
+	}
+
+	userID := c.Param("id")
+	if userID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID korisnika je obavezan"})
+		return
+	}
+
+	role := model.UserRole(roleStr.(string))
+	err := service.BlockUser(role, userID)
+	if err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Korisnik je uspešno blokiran"})
 }
 

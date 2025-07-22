@@ -28,6 +28,9 @@ func RegisterUser(user model.User) (string, error) {
 		return "", errors.New("greška prilikom hešovanja lozinke")
 	}
 	user.Password = string(hashedPassword)
+	
+	// 2.1. Postavi status na Active
+	user.Status = model.Active
 
 	// 3. Sačuvaj korisnika
 	err = repo.CreateUser(user)
