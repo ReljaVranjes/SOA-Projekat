@@ -3,6 +3,7 @@ package model
 import (
 	"encoding/json"
 	"errors"
+
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -26,7 +27,7 @@ func (r *UserRole) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &role); err != nil {
 		return err
 	}
-	
+
 	switch UserRole(role) {
 	case Admin, Tourist, Guide:
 		*r = UserRole(role)
@@ -41,7 +42,7 @@ func (s *UserStatus) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &status); err != nil {
 		return err
 	}
-	
+
 	switch UserStatus(status) {
 	case Active, Blocked:
 		*s = UserStatus(status)
@@ -52,16 +53,12 @@ func (s *UserStatus) UnmarshalJSON(data []byte) error {
 }
 
 type User struct {
-	ID       primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty"`
-	Username string             `bson:"username" json:"username"`
-	Email    string             `bson:"email" json:"email"`
-	Password string             `bson:"password" json:"password"` // hashed
 	ID           primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty"`
 	Username     string             `bson:"username" json:"username"`
 	Email        string             `bson:"email" json:"email"`
 	Password     string             `bson:"password" json:"password"` // hashed
-	Role     UserRole           `bson:"role" json:"role"`
-	Status   UserStatus         `bson:"status" json:"status"`
+	Role         UserRole           `bson:"role" json:"role"`
+	Status       UserStatus         `bson:"status" json:"status"`
 	FirstName    string             `bson:"firstName" json:"firstName"`
 	LastName     string             `bson:"lastName" json:"lastName"`
 	ProfileImage string             `bson:"profileImage" json:"profileImage"`

@@ -80,6 +80,9 @@ func UpdateUserStatus(userID string, status model.UserStatus) error {
 	update := bson.M{"$set": bson.M{"status": status}}
 
 	_, err = collection.UpdateOne(ctx, filter, update)
+	return err
+}
+
 func UpdateUserProfile(email string, updates bson.M) error {
 	collection := config.MongoDB.Collection("users")
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -87,7 +90,7 @@ func UpdateUserProfile(email string, updates bson.M) error {
 
 	filter := bson.M{"email": email}
 	update := bson.M{"$set": updates}
-	
+
 	_, err := collection.UpdateOne(ctx, filter, update)
 	return err
 }
