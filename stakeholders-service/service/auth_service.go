@@ -85,3 +85,40 @@ func LoginUser(email, password string) (string, error) {
 	return signedToken, nil
 }
 
+func GetUserProfile(email string) (model.User, error) {
+	user, err := repo.FindUserByEmail(email)
+	if err != nil {
+		return model.User{}, errors.New("korisnik nije pronađen")
+	}
+
+	user.Password = ""
+	return user, nil
+}
+
+func UpdateUserProfile(email string, profileData model.User) (model.User, error) {
+	updates := make(map[string]interface{})
+	
+	if profileData.FirstName != "" {
+		updates["firstName"] = profileData.FirstName
+	}
+	if profileData.LastName != "" {
+		updates["lastName"] = profileData.LastName
+	}
+	if profileData.ProfileImage != "" {
+		updates["profileImage"] = profileData.ProfileImage
+	}
+	if profileData.Biography != "" {
+		updates["biography"] = profileData.Biography
+	}
+	if profileData.Motto != "" {
+		updates["motto"] = profileData.Motto
+	}
+
+	err := repo.UpdateUserProfile(email, updates)
+	if err != nil {
+		return model.User{}, errors.New("greška prilikom ažuriranja profila")
+	}
+
+	return GetUserProfile(email)
+}
+

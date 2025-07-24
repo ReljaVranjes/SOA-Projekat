@@ -56,6 +56,15 @@ type User struct {
 	Username string             `bson:"username" json:"username"`
 	Email    string             `bson:"email" json:"email"`
 	Password string             `bson:"password" json:"password"` // hashed
+	ID           primitive.ObjectID `bson:"_id,omitempty" json:"id,omitempty"`
+	Username     string             `bson:"username" json:"username"`
+	Email        string             `bson:"email" json:"email"`
+	Password     string             `bson:"password" json:"password"` // hashed
 	Role     UserRole           `bson:"role" json:"role"`
 	Status   UserStatus         `bson:"status" json:"status"`
+	FirstName    string             `bson:"firstName" json:"firstName"`
+	LastName     string             `bson:"lastName" json:"lastName"`
+	ProfileImage string             `bson:"profileImage" json:"profileImage"`
+	Biography    string             `bson:"biography" json:"biography"`
+	Motto        string             `bson:"motto" json:"motto"`
 }
