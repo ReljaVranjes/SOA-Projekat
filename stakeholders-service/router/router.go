@@ -16,6 +16,8 @@ func SetupRouter() *gin.Engine {
 	auth := r.Group("/")
 	auth.Use(middleware.AuthMiddleware())
 	auth.GET("/me", handler.Me)
+	auth.GET("/users", handler.GetAllUsers)
+	auth.PUT("/users/:id/block", handler.BlockUser)
 	auth.GET("/profile", handler.GetProfile)
 	auth.PUT("/profile", handler.UpdateProfile)
 
