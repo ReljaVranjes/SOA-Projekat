@@ -1,12 +1,14 @@
 package middleware
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func AuthMiddleware() gin.HandlerFunc {
@@ -28,7 +30,13 @@ func AuthMiddleware() gin.HandlerFunc {
 		}
 
 		if claims, ok := token.Claims.(jwt.MapClaims); ok {
-			c.Set("userID", claims["id"])
+			// Convert the id to string format
+			var userIDStr string
+			if idValue := claims["id"]; idValue != nil {
+				userIDStr = fmt.Sprintf("%v", idValue)
+			}
+			
+			c.Set("userID", userIDStr)
 			c.Set("email", claims["email"])
 			c.Set("role", claims["role"])
 		}
@@ -68,10 +76,16 @@ func GetUserID(c *gin.Context) (string, bool) {
 		return "", false
 	}
 
-	userIDStr, ok := userID.(string)
-	if !ok {
-		return "", false
+	// Handle both string and ObjectID formats
+	switch v := userID.(type) {
+	case string:
+		return v, true
+	case primitive.ObjectID:
+		hexStr := v.Hex()
+		return hexStr, true
+	default:
+		// Try to convert to string as fallback
+		userIDStr := fmt.Sprintf("%v", userID)
+		return userIDStr, true
 	}
-
-	return userIDStr, true
 }
