@@ -16,10 +16,21 @@ func SetupRouter() *gin.Engine {
 	// Public routes (no authentication required)
 	r.GET("/tours", handler.GetAllTours)                           // Get all published tours
 	r.GET("/tours/:tourId/keypoints", handler.GetKeyPointsByTour)  // Get keypoints for tour
+	r.GET("/tours/:tourId/reviews", handler.GetReviewsByTour)      // Get reviews for tour
 
 	// Protected routes (authentication required)
 	auth := r.Group("/")
 	auth.Use(middleware.AuthMiddleware())
+
+	// Tourist routes (authenticated users can review)
+	touristRoutes := auth.Group("/")
+	touristRoutes.Use(middleware.RequireRole("Tourist"))
+	{
+		touristRoutes.POST("/tours/:tourId/reviews", handler.CreateReview)     // Create review
+		touristRoutes.GET("/reviews/my", handler.GetReviewsByTourist)          // Get my reviews
+		touristRoutes.PUT("/reviews/:reviewId", handler.UpdateReview)          // Update my review
+		touristRoutes.DELETE("/reviews/:reviewId", handler.DeleteReview)       // Delete my review
+	}
 
 	// Guide-only routes (only guides can create/manage tours)
 	guideOnly := auth.Group("/")

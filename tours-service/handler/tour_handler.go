@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"mime/multipart"
 	"net/http"
 	"strconv"
 	"tours-service/middleware"
@@ -11,17 +12,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func handleImageUpload(c *gin.Context, fieldName string) (string, error) {
-	file, err := c.FormFile(fieldName)
-	if err != nil {
-		return "", err
-	}
-
-	return service.UploadImage(file)
-}
-
 func CreateTour(c *gin.Context) {
-	// Get user ID from JWT context
 	guideID, exists := middleware.GetUserID(c)
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Korisnik nije autentifikovan"})
@@ -101,9 +92,10 @@ func GetAllTours(c *gin.Context) {
 func CreateKeyPoint(c *gin.Context) {
 	tourID := c.Param("tourId")
 
-	imagePath, err := handleImageUpload(c, "image")
+	// Get image file (optional)
+	image, err := c.FormFile("image")
 	if err != nil && err.Error() != "http: no such file" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Greška pri čitanju slike"})
 		return
 	}
 
@@ -139,12 +131,11 @@ func CreateKeyPoint(c *gin.Context) {
 		TourID:      tourObjectID,
 		Name:        name,
 		Description: description,
-		Image:       imagePath,
 		Longitude:   longitude,
 		Latitude:    latitude,
 	}
 
-	keyPoint, err := service.CreateKeyPoint(keyPointData)
+	keyPoint, err := service.CreateKeyPoint(keyPointData, image)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -167,12 +158,11 @@ func GetKeyPointsByTour(c *gin.Context) {
 func UpdateKeyPoint(c *gin.Context) {
 	keyPointID := c.Param("keyPointId")
 
-	imagePath, _ := handleImageUpload(c, "image")
+	image, _ := c.FormFile("image")
 
 	updateData := model.KeyPoint{
 		Name:        c.PostForm("name"),
 		Description: c.PostForm("description"),
-		Image:       imagePath,
 	}
 
 	if longitudeStr := c.PostForm("longitude"); longitudeStr != "" {
@@ -184,7 +174,7 @@ func UpdateKeyPoint(c *gin.Context) {
 		updateData.Latitude = latitude
 	}
 
-	keyPoint, err := service.UpdateKeyPoint(keyPointID, updateData)
+	keyPoint, err := service.UpdateKeyPoint(keyPointID, updateData, image)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -202,4 +192,132 @@ func DeleteKeyPoint(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Ključna tačka je uspešno obrisana"})
+}
+
+func CreateReview(c *gin.Context) {
+	tourID := c.Param("tourId")
+
+	touristID, exists := middleware.GetUserID(c)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Korisnik nije autentifikovan"})
+		return
+	}
+
+	rate := c.PostForm("rate")
+	comment := c.PostForm("comment")
+	tourDateStr := c.PostForm("tourDate")
+
+	reviewData, err := service.ParseReviewFormData(rate, comment, tourDateStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	tourObjectID, err := primitive.ObjectIDFromHex(tourID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Neispravan tour ID"})
+		return
+	}
+	reviewData.TourID = tourObjectID
+
+	form, err := c.MultipartForm()
+	var images []*multipart.FileHeader
+	if err == nil && form.File["images"] != nil {
+		images = form.File["images"]
+	}
+
+	review, err := service.CreateReview(reviewData, touristID, images)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, review)
+}
+
+func GetReviewsByTour(c *gin.Context) {
+	tourID := c.Param("tourId")
+	reviews, err := service.GetReviewsByTour(tourID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, reviews)
+}
+
+func GetReviewsByTourist(c *gin.Context) {
+	touristID, exists := middleware.GetUserID(c)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Korisnik nije autentifikovan"})
+		return
+	}
+
+	reviews, err := service.GetReviewsByTourist(touristID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, reviews)
+}
+
+func UpdateReview(c *gin.Context) {
+	reviewID := c.Param("reviewId")
+
+	touristID, exists := middleware.GetUserID(c)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Korisnik nije autentifikovan"})
+		return
+	}
+
+	rate := c.PostForm("rate")
+	comment := c.PostForm("comment")
+	tourDateStr := c.PostForm("tourDate")
+
+	var updateData model.Review
+	var err error
+
+	if rate != "" || comment != "" || tourDateStr != "" {
+		updateData, err = service.ParseReviewFormData(rate, comment, tourDateStr)
+		if err != nil && rate != "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		if comment != "" {
+			updateData.Comment = comment
+		}
+	}
+
+	form, err := c.MultipartForm()
+	var images []*multipart.FileHeader
+	if err == nil && form.File["images"] != nil {
+		images = form.File["images"]
+	}
+
+	review, err := service.UpdateReview(reviewID, touristID, updateData, images)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, review)
+}
+
+func DeleteReview(c *gin.Context) {
+	reviewID := c.Param("reviewId")
+
+	touristID, exists := middleware.GetUserID(c)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Korisnik nije autentifikovan"})
+		return
+	}
+
+	err := service.DeleteReview(reviewID, touristID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Recenzija je uspešno obrisana"})
 }

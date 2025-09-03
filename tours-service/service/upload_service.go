@@ -12,6 +12,10 @@ import (
 )
 
 func UploadImage(file *multipart.FileHeader) (string, error) {
+	return UploadImageToDir(file, "keypoints")
+}
+
+func UploadImageToDir(file *multipart.FileHeader, subDir string) (string, error) {
 	// Validate file size (max 5MB)
 	if file.Size > 5*1024*1024 {
 		return "", fmt.Errorf("slika je prevelika (max 5MB)")
@@ -35,8 +39,8 @@ func UploadImage(file *multipart.FileHeader) (string, error) {
 	uniqueID := uuid.New().String()
 	filename := fmt.Sprintf("%s_%d%s", uniqueID, time.Now().Unix(), ext)
 	
-	// Create full path
-	uploadDir := "uploads/keypoints"
+	// Create full path with subdirectory
+	uploadDir := filepath.Join("uploads", subDir)
 	if err := os.MkdirAll(uploadDir, 0755); err != nil {
 		return "", fmt.Errorf("greška prilikom kreiranja direktorijuma")
 	}

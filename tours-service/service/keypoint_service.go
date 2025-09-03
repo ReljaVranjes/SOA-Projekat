@@ -2,13 +2,14 @@ package service
 
 import (
 	"errors"
+	"mime/multipart"
 	"tours-service/model"
 	"tours-service/repo"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
-func CreateKeyPoint(keyPointData model.KeyPoint) (model.KeyPoint, error) {
+func CreateKeyPoint(keyPointData model.KeyPoint, image *multipart.FileHeader) (model.KeyPoint, error) {
 	if keyPointData.Name == "" {
 		return model.KeyPoint{}, errors.New("ime ključne tačke je obavezno")
 	}
@@ -19,11 +20,21 @@ func CreateKeyPoint(keyPointData model.KeyPoint) (model.KeyPoint, error) {
 		return model.KeyPoint{}, errors.New("tour ID je obavezan")
 	}
 
+	// Handle image upload if provided
+	var imagePath string
+	if image != nil {
+		uploadedPath, err := UploadImageToDir(image, "keypoints")
+		if err != nil {
+			return model.KeyPoint{}, errors.New("greška prilikom upload-a slike: " + err.Error())
+		}
+		imagePath = uploadedPath
+	}
+
 	keyPoint := model.KeyPoint{
 		TourID:      keyPointData.TourID,
 		Name:        keyPointData.Name,
 		Description: keyPointData.Description,
-		Image:       keyPointData.Image,
+		Image:       imagePath,
 		Longitude:   keyPointData.Longitude,
 		Latitude:    keyPointData.Latitude,
 	}
@@ -58,7 +69,7 @@ func GetKeyPointByID(keyPointID string) (model.KeyPoint, error) {
 	return keyPoint, nil
 }
 
-func UpdateKeyPoint(keyPointID string, updateData model.KeyPoint) (model.KeyPoint, error) {
+func UpdateKeyPoint(keyPointID string, updateData model.KeyPoint, image *multipart.FileHeader) (model.KeyPoint, error) {
 	objectID, err := primitive.ObjectIDFromHex(keyPointID)
 	if err != nil {
 		return model.KeyPoint{}, errors.New("neispravan ID ključne tačke")
@@ -69,9 +80,16 @@ func UpdateKeyPoint(keyPointID string, updateData model.KeyPoint) (model.KeyPoin
 		updates["name"] = updateData.Name
 	}
 	updates["description"] = updateData.Description
-	if updateData.Image != "" {
-		updates["image"] = updateData.Image
+	
+	// Handle image upload if provided
+	if image != nil {
+		imagePath, err := UploadImageToDir(image, "keypoints")
+		if err != nil {
+			return model.KeyPoint{}, errors.New("greška prilikom upload-a slike: " + err.Error())
+		}
+		updates["image"] = imagePath
 	}
+	
 	if updateData.Longitude != 0 {
 		updates["longitude"] = updateData.Longitude
 	}
