@@ -6,8 +6,8 @@ import (
 
 	"github.com/joho/godotenv"
 
-	"stakeholders-service/config"
-	"stakeholders-service/router"
+	"tours-service/config"
+	"tours-service/router"
 )
 
 func main() {
@@ -22,8 +22,8 @@ func main() {
 
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "4000"
+		port = "5000"
 	}
-	log.Println("🚀 Stakeholders servis pokrenut na portu", port)
+	log.Println("🚀 Tours servis pokrenut na portu", port)
 	r.Run(":" + port)
 }
