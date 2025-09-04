@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { toursService, Tour } from '../services/toursService';
 import { useApiHandler } from '../utils/handleApi';
 import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const MyTours: React.FC = () => {
   const [tours, setTours] = useState<Tour[]>([]);
   const { user } = useAuth();
   const { loading, error, success, handleApi } = useApiHandler();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (user?.id) {
@@ -37,7 +39,8 @@ const MyTours: React.FC = () => {
         errorMessage: 'Failed to publish tour'
       }
     );
-    
+    console.log("TURE")
+    console.log(tours)
     if (result !== null) {
       loadMyTours();
     }
@@ -117,7 +120,7 @@ const MyTours: React.FC = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {tours.map((tour) => (
-            <div key={tour._id} className="bg-white rounded-lg shadow-md overflow-hidden">
+            <div key={tour.id} className="bg-white rounded-lg shadow-md overflow-hidden">
               <div className="h-48 bg-gradient-to-r from-green-500 to-blue-600"></div>
               
               <div className="p-6">
@@ -161,13 +164,15 @@ const MyTours: React.FC = () => {
                 </div>
                 
                 <div className="flex gap-2">
-                  <button className="flex-1 bg-gray-600 text-white px-3 py-2 rounded text-sm hover:bg-gray-700 transition-colors">
+                  <button
+                   onClick={() => navigate(`/tour/${tour.id}`)}
+                   className="flex-1 bg-gray-600 text-white px-3 py-2 rounded text-sm hover:bg-gray-700 transition-colors">
                     Edit
                   </button>
                   
                   {tour.status === 'Draft' && (
                     <button 
-                      onClick={() => handlePublish(tour._id)}
+                      onClick={() => handlePublish(tour.id)}
                       className="flex-1 bg-green-600 text-white px-3 py-2 rounded text-sm hover:bg-green-700 transition-colors"
                     >
                       Publish
@@ -176,7 +181,7 @@ const MyTours: React.FC = () => {
                   
                   {tour.status === 'Published' && (
                     <button 
-                      onClick={() => handleArchive(tour._id)}
+                      onClick={() => handleArchive(tour.id)}
                       className="flex-1 bg-red-600 text-white px-3 py-2 rounded text-sm hover:bg-red-700 transition-colors"
                     >
                       Archive

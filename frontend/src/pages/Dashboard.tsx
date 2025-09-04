@@ -5,7 +5,7 @@ import { ROUTES } from '../constants/routes';
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
-
+  
   return (
     <div className="space-y-8">
       <div className="text-center">

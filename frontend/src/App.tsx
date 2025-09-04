@@ -7,6 +7,7 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Tours from './pages/Tours';
 import MyTours from './pages/MyTours';
+import EditTour from './pages/EditTour';
 import ProtectedRoute from './components/ProtectedRoute';
 import { ROUTES } from './constants/routes';
 
@@ -40,6 +41,14 @@ function App() {
               element={
                 <ProtectedRoute requireRoles={["Guide"]}>
                   <MyTours />
+                </ProtectedRoute>
+              }
+            />
+             <Route
+              path={ROUTES.EDIT_TOUR}
+              element={
+                <ProtectedRoute requireRoles={["Guide"]}>
+                  <EditTour />
                 </ProtectedRoute>
               }
             />

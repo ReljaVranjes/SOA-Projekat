@@ -11,11 +11,23 @@ export interface RegisterRequest {
   role: string;
 }
 
-export interface AuthResponse {
-  token: string;
+
+export interface User {
+  id: string;
   email: string;
   role: string;
-  id: string;
+  username: string;
+  firstName: string;
+  lastName: string;
+  biography: string;
+  motto: string;
+  profileImage: string;
+  status: string;
+}
+
+export interface AuthResponse {
+  token: string;
+  user: User;
 }
 
 export const authService = {
