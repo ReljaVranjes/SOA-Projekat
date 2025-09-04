@@ -131,7 +131,7 @@ const Tours: React.FC = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredTours.map((tour) => (
-            <div key={tour._id} className="bg-white rounded-lg shadow-md overflow-hidden">
+            <div key={tour.id} className="bg-white rounded-lg shadow-md overflow-hidden">
               <div className="h-48 bg-gradient-to-r from-blue-500 to-purple-600"></div>
               
               <div className="p-6">

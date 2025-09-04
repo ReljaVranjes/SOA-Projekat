@@ -32,7 +32,7 @@ toursApi.interceptors.response.use(
 );
 
 export interface Tour {
-  _id: string;
+  id: string;
   name: string;
   description: string;
   level: string;
@@ -76,6 +76,11 @@ export const toursService = {
 
   getToursByGuide: async (guideId: string): Promise<Tour[]> => {
     const response = await toursApi.get(`/tours/guide/${guideId}`);
+    return response.data;
+  },
+
+  getTourById: async (tourId: string): Promise<Tour> => {
+    const response = await toursApi.get(`/tour/${tourId}`);
     return response.data;
   },
 

@@ -54,7 +54,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const setUserData = (data: AuthResponse) => {
-    const userData = { email: data.email, role: data.role, id: data.id };
+    const userData = { email: data.user.email, role: data.user.role, id: data.user.id };
     localStorage.setItem('token', data.token);
     setUser(userData);
     setIsAuthenticated(true);
