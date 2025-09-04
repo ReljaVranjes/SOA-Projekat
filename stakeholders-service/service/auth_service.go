@@ -12,6 +12,41 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// PublicUser is a safe DTO for sending user data to clients (no password).
+type PublicUser struct {
+	ID           string            `json:"id"`
+	Username     string            `json:"username"`
+	Email        string            `json:"email"`
+	Role         model.UserRole    `json:"role"`
+	Status       model.UserStatus  `json:"status"`
+	FirstName    string            `json:"firstName"`
+	LastName     string            `json:"lastName"`
+	ProfileImage string            `json:"profileImage"`
+	Biography    string            `json:"biography"`
+	Motto        string            `json:"motto"`
+}
+
+// LoginResponse is what /login returns now.
+type LoginResponse struct {
+	Token string     `json:"token"`
+	User  PublicUser `json:"user"`
+}
+
+func toPublicUser(u model.User) PublicUser {
+	return PublicUser{
+		ID:           u.ID.Hex(),
+		Username:     u.Username,
+		Email:        u.Email,
+		Role:         u.Role,
+		Status:       u.Status,
+		FirstName:    u.FirstName,
+		LastName:     u.LastName,
+		ProfileImage: u.ProfileImage,
+		Biography:    u.Biography,
+		Motto:        u.Motto,
+	}
+}
+
 func RegisterUser(user model.User) (string, error) {
 	// 1. Proveri da li već postoji korisnik sa istim emailom
 	exists, err := repo.UserExistsByEmail(user.Email)
@@ -33,21 +68,23 @@ func RegisterUser(user model.User) (string, error) {
 	user.Status = model.Active
 
 	// 3. Sačuvaj korisnika
-	err = repo.CreateUser(user)
-	if err != nil {
+	if err := repo.CreateUser(user); err != nil {
 		return "", errors.New("greška prilikom čuvanja korisnika")
 	}
 
 	// 4. Kreiraj JWT token
 	claims := jwt.MapClaims{
-		"id":    user.ID,
+		"id":    user.ID.Hex(),          // hex string je sigurniji za token
 		"email": user.Email,
-		"role":  user.Role,
-		"exp":   time.Now().Add(time.Hour * 72).Unix(),
+		"role":  string(user.Role),
+		"exp":   time.Now().Add(72 * time.Hour).Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	secret := os.Getenv("JWT_SECRET")
+	if secret == "" {
+		return "", errors.New("JWT_SECRET nije postavljen u okruženju")
+	}
 	signedToken, err := token.SignedString([]byte(secret))
 	if err != nil {
 		return "", errors.New("neuspešno generisanje tokena")
@@ -56,31 +93,37 @@ func RegisterUser(user model.User) (string, error) {
 	return signedToken, nil
 }
 
-func LoginUser(email, password string) (string, error) {
+func LoginUser(email, password string) (LoginResponse, error) {
 	user, err := repo.FindUserByEmail(email)
 	if err != nil {
-		return "", errors.New("korisnik ne postoji")
+		return LoginResponse{}, errors.New("korisnik ne postoji")
 	}
 
 	// Proveri lozinku
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
-	if err != nil {
-		return "", errors.New("pogrešna lozinka")
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
+		return LoginResponse{}, errors.New("pogrešna lozinka")
 	}
 
 	// Generiši token
 	claims := jwt.MapClaims{
-		"id":    user.ID,
+		"id":    user.ID.Hex(),
 		"email": user.Email,
-		"role":  user.Role,
-		"exp":   time.Now().Add(time.Hour * 72).Unix(),
+		"role":  string(user.Role),
+		"exp":   time.Now().Add(72 * time.Hour).Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	signedToken, err := token.SignedString([]byte(os.Getenv("JWT_SECRET")))
+	secret := os.Getenv("JWT_SECRET")
+	if secret == "" {
+		return LoginResponse{}, errors.New("JWT_SECRET nije postavljen u okruženju")
+	}
+	signedToken, err := token.SignedString([]byte(secret))
 	if err != nil {
-		return "", errors.New("greška pri generisanju tokena")
+		return LoginResponse{}, errors.New("greška pri generisanju tokena")
 	}
 
-	return signedToken, nil
+	return LoginResponse{
+		Token: signedToken,
+		User:  toPublicUser(user),
+	}, nil
 }

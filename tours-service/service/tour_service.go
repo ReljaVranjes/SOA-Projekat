@@ -52,6 +52,24 @@ func GetToursByGuide(guideID string) ([]model.Tour, error) {
 	return tours, nil
 }
 
+func GetTourByID(id string) (model.Tour, error) {
+	if id == "" {
+		return model.Tour{}, errors.New("neispravan tour ID")
+	}
+
+	oid, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		return model.Tour{}, errors.New("neispravan tour ID")
+	}
+
+	tour, err := repo.GetTourByID(oid)
+	if err != nil {
+		return model.Tour{}, errors.New("greška prilikom dobavljanja ture")
+	}
+
+	return tour, nil
+}
+
 func PublishTour(tourID string, guideID string) error {
 	tour, err := getTourByIDAndVerifyOwnership(tourID, guideID)
 	if err != nil {
