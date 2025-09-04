@@ -45,6 +45,16 @@ func GetToursByGuide(c *gin.Context) {
 	c.JSON(http.StatusOK, tours)
 }
 
+func GetTourByID(c *gin.Context) {
+	id := c.Param("tourId")
+	tour, err := service.GetTourByID(id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, tour)
+}
+
 func PublishTour(c *gin.Context) {
 	tourID := c.Param("tourId")
 	guideID, exists := middleware.GetUserID(c)

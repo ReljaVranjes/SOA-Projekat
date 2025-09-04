@@ -46,6 +46,7 @@ func SetupRouter() *gin.Engine {
 	guideOnly.Use(middleware.RequireRole("Guide"))
 	{
 		guideOnly.POST("/tours", handler.CreateTour)                        // Create tour
+		guideOnly.GET("/tour/:tourId", handler.GetTourByID)                // Get tour by ID
 		guideOnly.GET("/tours/guide/:guideId", handler.GetToursByGuide)     // Get tours by guide
 		guideOnly.PUT("/tours/:tourId/publish", handler.PublishTour)        // Publish tour
 		guideOnly.PUT("/tours/:tourId/archive", handler.ArchiveTour)        // Archive tour

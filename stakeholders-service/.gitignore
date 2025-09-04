@@ -12,9 +12,6 @@
 bin/
 vendor/
 
-# Dependency files
-go.sum
-
 # Env vars
 .env
 
