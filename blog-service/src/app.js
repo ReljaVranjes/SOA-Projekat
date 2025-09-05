@@ -13,7 +13,7 @@ const commentRoutes = require('./routes/commentRoutes');
 app.use('/api/blogs', blogRoutes);
 app.use('/api/comments', commentRoutes);
 
-mongoose.connect(process.env.MONGO_URI)
+mongoose.connect(process.env.MONGO_URI, { dbName: 'blog-db' })
   .then(() => {
     console.log('✅ Connected to MongoDB');
     app.listen(process.env.PORT, () => {
