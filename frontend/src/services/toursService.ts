@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const toursApi = axios.create({
+export const toursApi = axios.create({
   baseURL: 'http://localhost:5000',
   timeout: 10000,
 });
@@ -47,7 +47,7 @@ export interface Tour {
 }
 
 export interface KeyPoint {
-  _id: string;
+  id: string;
   tourID: string;
   name: string;
   description: string;
@@ -112,17 +112,14 @@ export const toursService = {
     return response.data;
   },
 
-  updateKeyPoint: async (keyPointId: string, keyPointData: FormData): Promise<KeyPoint> => {
-    const response = await toursApi.put(`/keypoints/${keyPointId}`, keyPointData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+  updateKeyPoint: async (keyPointId: string, keyPointData: FormData, tourId: string): Promise<KeyPoint> => {
+    console.log("UPDATE KP DATA", keyPointData)
+    const response = await toursApi.put(`/tours/${tourId}/keypoints/${keyPointId}`, keyPointData)
     return response.data;
   },
 
-  deleteKeyPoint: async (keyPointId: string): Promise<void> => {
-    await toursApi.delete(`/keypoints/${keyPointId}`);
+  deleteKeyPoint: async (keyPointId: string,tourId: string): Promise<void> => {
+    await toursApi.delete(`/tours/${tourId}/keypoints/${keyPointId}`);
   },
 
   // Reviews

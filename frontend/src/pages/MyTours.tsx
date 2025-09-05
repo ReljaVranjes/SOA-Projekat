@@ -39,8 +39,6 @@ const MyTours: React.FC = () => {
         errorMessage: 'Failed to publish tour'
       }
     );
-    console.log("TURE")
-    console.log(tours)
     if (result !== null) {
       loadMyTours();
     }
