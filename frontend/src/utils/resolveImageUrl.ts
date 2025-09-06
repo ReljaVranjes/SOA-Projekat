@@ -1,7 +1,7 @@
-import { toursApi } from '../services/toursService';
+import api from '../api';
 
 const API_BASE =
-  (toursApi?.defaults?.baseURL?.replace(/\/+$/, '') ?? '') ||
+  (api?.defaults?.baseURL?.replace(/\/+$/, '') ?? '') ||
   (import.meta as any)?.env?.VITE_API_URL?.replace(/\/+$/, '') ||
   '';
 
