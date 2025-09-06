@@ -1,35 +1,7 @@
 import axios from 'axios';
+import api from '../api';
 
-export const toursApi = axios.create({
-  baseURL: 'http://localhost:5000',
-  timeout: 10000,
-});
 
-toursApi.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
-toursApi.interceptors.response.use(
-  (response) => {
-    return response;
-  },
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      window.location.href = '/login';
-    }
-    return Promise.reject(error);
-  }
-);
 
 export interface Tour {
   id: string;
@@ -67,44 +39,46 @@ export interface Review {
   createdAt: string;
 }
 
+const prefix = '/api/tours-service';
+
 export const toursService = {
   // Tours
   getAllTours: async (): Promise<Tour[]> => {
-    const response = await toursApi.get('/tours');
+    const response = await api.get(`${prefix}/tours`);
     return response.data;
   },
 
   getToursByGuide: async (guideId: string): Promise<Tour[]> => {
-    const response = await toursApi.get(`/tours/guide/${guideId}`);
+    const response = await api.get(`${prefix}/tours/guide/${guideId}`);
     return response.data;
   },
 
   getTourById: async (tourId: string): Promise<Tour> => {
-    const response = await toursApi.get(`/tour/${tourId}`);
+    const response = await api.get(`${prefix}/tour/${tourId}`);
     return response.data;
   },
 
   createTour: async (tourData: Partial<Tour>): Promise<Tour> => {
-    const response = await toursApi.post('/tours', tourData);
+    const response = await api.post(`${prefix}/tours`, tourData);
     return response.data;
   },
 
   publishTour: async (tourId: string): Promise<void> => {
-    await toursApi.put(`/tours/${tourId}/publish`);
+    await api.put(`${prefix}/tours/${tourId}/publish`);
   },
 
   archiveTour: async (tourId: string): Promise<void> => {
-    await toursApi.put(`/tours/${tourId}/archive`);
+    await api.put(`${prefix}/tours/${tourId}/archive`);
   },
 
   // Key Points
   getKeyPointsByTour: async (tourId: string): Promise<KeyPoint[]> => {
-    const response = await toursApi.get(`/tours/${tourId}/keypoints`);
+    const response = await api.get(`${prefix}/tours/${tourId}/keypoints`);
     return response.data;
   },
 
   createKeyPoint: async (tourId: string, keyPointData: FormData): Promise<KeyPoint> => {
-    const response = await toursApi.post(`/tours/${tourId}/keypoints`, keyPointData, {
+    const response = await api.post(`${prefix}/tours/${tourId}/keypoints`, keyPointData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -114,27 +88,27 @@ export const toursService = {
 
   updateKeyPoint: async (keyPointId: string, keyPointData: FormData, tourId: string): Promise<KeyPoint> => {
     console.log("UPDATE KP DATA", keyPointData)
-    const response = await toursApi.put(`/tours/${tourId}/keypoints/${keyPointId}`, keyPointData)
+    const response = await api.put(`${prefix}/tours/${tourId}/keypoints/${keyPointId}`, keyPointData)
     return response.data;
   },
 
-  deleteKeyPoint: async (keyPointId: string,tourId: string): Promise<void> => {
-    await toursApi.delete(`/tours/${tourId}/keypoints/${keyPointId}`);
+  deleteKeyPoint: async (keyPointId: string, tourId: string): Promise<void> => {
+    await api.delete(`${prefix}/tours/${tourId}/keypoints/${keyPointId}`);
   },
 
   // Reviews
   getReviewsByTour: async (tourId: string): Promise<Review[]> => {
-    const response = await toursApi.get(`/tours/${tourId}/reviews`);
+    const response = await api.get(`${prefix}/tours/${tourId}/reviews`);
     return response.data;
   },
 
   getReviewsByTourist: async (): Promise<Review[]> => {
-    const response = await toursApi.get('/reviews/my');
+    const response = await api.get(`${prefix}/reviews/my`);
     return response.data;
   },
 
   createReview: async (tourId: string, reviewData: FormData): Promise<Review> => {
-    const response = await toursApi.post(`/tours/${tourId}/reviews`, reviewData, {
+    const response = await api.post(`${prefix}/tours/${tourId}/reviews`, reviewData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -143,7 +117,7 @@ export const toursService = {
   },
 
   updateReview: async (reviewId: string, reviewData: FormData): Promise<Review> => {
-    const response = await toursApi.put(`/reviews/${reviewId}`, reviewData, {
+    const response = await api.put(`${prefix}/reviews/${reviewId}`, reviewData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -152,6 +126,6 @@ export const toursService = {
   },
 
   deleteReview: async (reviewId: string): Promise<void> => {
-    await toursApi.delete(`/reviews/${reviewId}`);
+    await api.delete(`${prefix}/reviews/${reviewId}`);
   },
 };

@@ -30,19 +30,21 @@ export interface AuthResponse {
   user: User;
 }
 
+const prefix = '/api/stakeholders-service';
+
 export const authService = {
   login: async (data: LoginRequest): Promise<AuthResponse> => {
-    const response = await api.post('/login', data);
+    const response = await api.post(`${prefix}/login`, data);
     return response.data;
-  },
+    },
 
-  register: async (data: RegisterRequest): Promise<AuthResponse> => {
-    const response = await api.post('/register', data);
+    register: async (data: RegisterRequest): Promise<AuthResponse> => {
+    const response = await api.post(`${prefix}/register`, data);
     return response.data;
-  },
+    },
 
-  verifyToken: async (): Promise<AuthResponse> => {
-    const response = await api.get('/verify');
+    verifyToken: async (): Promise<AuthResponse> => {
+    const response = await api.get(`${prefix}/verify`);
     return response.data;
   },
 };
