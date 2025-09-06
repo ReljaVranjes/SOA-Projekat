@@ -10,8 +10,8 @@ app.use(express.json());
 const blogRoutes = require('./routes/blogRoutes');
 const commentRoutes = require('./routes/commentRoutes');
 
-app.use('/api/blogs', blogRoutes);
-app.use('/api/comments', commentRoutes);
+app.use('/blogs', blogRoutes);
+app.use('/comments', commentRoutes);
 
 mongoose.connect(process.env.MONGO_URI, { dbName: 'blog-db' })
   .then(() => {

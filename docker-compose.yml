@@ -24,6 +24,22 @@ services:
       ME_CONFIG_MONGODB_URL: mongodb://admin:password@mongodb:27017/?authSource=admin
       ME_CONFIG_BASICAUTH_USERNAME: admin
       ME_CONFIG_BASICAUTH_PASSWORD: admin
+  
+  gateway:
+    build: ./gateway
+    container_name: gateway
+    ports:
+      - "8088:8088"
+    depends_on:
+      - blog-service
+      - stakeholders-service
+      - tours-service
+    environment:
+      PORT: 8088
+      FRONTEND_URL: "http://localhost:3001"
+      BLOG_SERVICE_URL: "http://blog-service:3000"
+      STAKEHOLDERS_SERVICE_URL: "http://stakeholders-service:4000"
+      TOURS_SERVICE_URL: "http://tours-service:5000"
 
   stakeholders-service:
     build: ./stakeholders-service
@@ -43,7 +59,9 @@ services:
     depends_on:
       - mongodb
     environment:
+      - PORT=3000
       - MONGO_URI=mongodb://admin:password@mongodb:27017
+      - JWT_SECRET=mojSuperTajniJWT123
 
   tours-service:
     build: ./tours-service
