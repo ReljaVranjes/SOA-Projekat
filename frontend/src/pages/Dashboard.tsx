@@ -1,13 +1,88 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { ROUTES } from '../constants/routes';
+import PositionSimulator from '../components/PositionSimulator';
+import { locationService, Location } from '../services/locationService';
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
+  const [isSimulatorOpen, setIsSimulatorOpen] = useState(false);
+  const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null);
+
+  // Load saved location from database and localStorage on component mount
+  useEffect(() => {
+    const loadUserLocation = async () => {
+      try {
+        // First try to get location from database
+        const userProfile = await locationService.getProfile();
+        if (userProfile.currentLocation) {
+          setCurrentLocation(userProfile.currentLocation);
+          localStorage.setItem('userLocation', JSON.stringify(userProfile.currentLocation));
+        } else {
+          // Fallback to localStorage if no database location
+          const savedLocation = localStorage.getItem('userLocation');
+          if (savedLocation) {
+            try {
+              const location = JSON.parse(savedLocation);
+              setCurrentLocation(location);
+            } catch (error) {
+              console.error('Error parsing saved location:', error);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error loading user location:', error);
+        // Fallback to localStorage on error
+        const savedLocation = localStorage.getItem('userLocation');
+        if (savedLocation) {
+          try {
+            const location = JSON.parse(savedLocation);
+            setCurrentLocation(location);
+          } catch (parseError) {
+            console.error('Error parsing saved location:', parseError);
+          }
+        }
+      }
+    };
+
+    loadUserLocation();
+  }, []);
+
+  const handleLocationSelect = async (lat: number, lng: number) => {
+    const location: Location = { lat, lng };
+    
+    try {
+      // Save to database
+      await locationService.updateLocation(location);
+      
+      // Update local state and cache
+      setCurrentLocation(location);
+      localStorage.setItem('userLocation', JSON.stringify(location));
+      
+      console.log('Location saved successfully to database');
+    } catch (error) {
+      console.error('Failed to save location to database:', error);
+      
+      // Fallback: save to localStorage only
+      setCurrentLocation(location);
+      localStorage.setItem('userLocation', JSON.stringify(location));
+      
+      // Show user-friendly error message
+      alert('Location saved locally. Please check your internet connection and try again to sync with the server.');
+    }
+  };
+
+  const openSimulator = () => {
+    setIsSimulatorOpen(true);
+  };
+
+  const closeSimulator = () => {
+    setIsSimulatorOpen(false);
+  };
   
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 relative">
       <div className="text-center">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
           Welcome to SOA Tours
@@ -74,6 +149,53 @@ const Dashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Position Simulator Button - Fixed in bottom right corner */}
+      <button
+        onClick={openSimulator}
+        className="fixed bottom-6 right-6 bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 transition-colors z-40"
+        title="Position Simulator"
+      >
+        <svg
+          className="w-6 h-6"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+          />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+          />
+        </svg>
+      </button>
+
+      {/* Current Location Display */}
+      {currentLocation && (
+        <div className="fixed bottom-6 left-6 bg-white p-3 rounded-lg shadow-lg border border-gray-200 z-40">
+          <div className="text-sm text-gray-600">
+            <div className="font-semibold text-gray-800">Current Location:</div>
+            <div>Lat: {currentLocation.lat.toFixed(6)}</div>
+            <div>Lng: {currentLocation.lng.toFixed(6)}</div>
+          </div>
+        </div>
+      )}
+
+      {/* Position Simulator Modal */}
+      <PositionSimulator
+        isOpen={isSimulatorOpen}
+        onClose={closeSimulator}
+        onLocationSelect={handleLocationSelect}
+        currentLocation={currentLocation}
+      />
     </div>
   );
 };

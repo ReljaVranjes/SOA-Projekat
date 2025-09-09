@@ -147,3 +147,44 @@ func UpdateProfile(c *gin.Context) {
 	c.JSON(http.StatusOK, updatedUser)
 }
 
+func UpdateLocation(c *gin.Context) {
+	email, exists := c.Get("email")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Email nije pronađen u tokenu"})
+		return
+	}
+
+	emailStr, ok := email.(string)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Neispravan format emaila"})
+		return
+	}
+
+	var location model.Location
+	if err := c.ShouldBindJSON(&location); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Neispravan JSON format za lokaciju"})
+		return
+	}
+
+	// Validate location coordinates
+	if location.Lat < -90 || location.Lat > 90 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Neispravna širina (lat) - mora biti između -90 i 90"})
+		return
+	}
+	if location.Lng < -180 || location.Lng > 180 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Neispravna dužina (lng) - mora biti između -180 i 180"})
+		return
+	}
+
+	updatedUser, err := service.UpdateUserLocation(emailStr, location)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Lokacija je uspešno ažurirana",
+		"user":    updatedUser,
+	})
+}
+
