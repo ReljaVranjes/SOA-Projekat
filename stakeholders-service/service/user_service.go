@@ -43,6 +43,18 @@ func UpdateUserProfile(email string, profileData model.User) (model.User, error)
 	return GetUserProfile(email)
 }
 
+func UpdateUserLocation(email string, location model.Location) (model.User, error) {
+	updates := make(map[string]interface{})
+	updates["currentLocation"] = location
+
+	err := repo.UpdateUserProfile(email, updates)
+	if err != nil {
+		return model.User{}, errors.New("greška prilikom ažuriranja lokacije")
+	}
+
+	return GetUserProfile(email)
+}
+
 func GetAllUsersForAdmin(userRole model.UserRole) ([]model.User, error) {
 	if userRole != model.Admin {
 		return nil, errors.New("pristup dozvoljen samo administratorima")
