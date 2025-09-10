@@ -36,15 +36,10 @@ export const authService = {
   login: async (data: LoginRequest): Promise<AuthResponse> => {
     const response = await api.post(`${prefix}/login`, data);
     return response.data;
-    },
+  },
 
-    register: async (data: RegisterRequest): Promise<AuthResponse> => {
+  register: async (data: RegisterRequest): Promise<AuthResponse> => {
     const response = await api.post(`${prefix}/register`, data);
-    return response.data;
-    },
-
-    verifyToken: async (): Promise<AuthResponse> => {
-    const response = await api.get(`${prefix}/verify`);
     return response.data;
   },
 };
