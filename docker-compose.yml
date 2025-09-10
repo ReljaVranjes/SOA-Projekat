@@ -13,18 +13,36 @@ services:
     volumes:
       - mongodb_data:/data/db
 
+  neo4j:
+    image: neo4j:latest
+    container_name: neo4j
+    ports:
+      - "7474:7474" # HTTP interface
+      - "7687:7687" # Bolt protocol
+    environment:
+      - NEO4J_AUTH=neo4j/password123
+      - NEO4J_dbms_memory_pagecache_size=512M
+      - NEO4J_dbms_memory_heap_max__size=512M
+      - NEO4J_dbms_memory_heap_initial__size=512M
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+      - neo4j_import:/var/lib/neo4j/import
+      - neo4j_plugins:/plugins
+    restart: unless-stopped
+
   mongo-express:
     image: mongo-express:1.0.2-20
     container_name: mongo-express
     depends_on:
-    - mongodb
+      - mongodb
     ports:
-    - "8081:8081"
+      - "8081:8081"
     environment:
       ME_CONFIG_MONGODB_URL: mongodb://admin:password@mongodb:27017/?authSource=admin
       ME_CONFIG_BASICAUTH_USERNAME: admin
       ME_CONFIG_BASICAUTH_PASSWORD: admin
-  
+
   gateway:
     build: ./gateway
     container_name: gateway
@@ -34,12 +52,14 @@ services:
       - blog-service
       - stakeholders-service
       - tours-service
+      - followers-service
     environment:
       PORT: 8088
       FRONTEND_URL: "http://localhost:3001"
       BLOG_SERVICE_URL: "http://blog-service:3000"
       STAKEHOLDERS_SERVICE_URL: "http://stakeholders-service:4000"
       TOURS_SERVICE_URL: "http://tours-service:5000"
+      FOLLOWERS_SERVICE_URL: "http://followers-service:6000"
 
   stakeholders-service:
     build: ./stakeholders-service
@@ -73,6 +93,25 @@ services:
       - mongodb
     environment:
       - MONGO_URI=mongodb://admin:password@mongodb:27017
+      - JWT_SECRET=mojSuperTajniJWT123
+
+  followers-service:
+    build: ./followers-service
+    container_name: followers-service
+    ports:
+      - "6000:6000"
+    depends_on:
+      - neo4j
+    environment:
+      - PORT=6000
+      - NEO4J_URI=bolt://neo4j:7687
+      - NEO4J_USER=neo4j
+      - NEO4J_PASSWORD=password123
+      - JWT_SECRET=mojSuperTajniJWT123
 
 volumes:
   mongodb_data:
+  neo4j_data:
+  neo4j_logs:
+  neo4j_import:
+  neo4j_plugins:
