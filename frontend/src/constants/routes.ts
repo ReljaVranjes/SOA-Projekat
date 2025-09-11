@@ -4,6 +4,7 @@ export const ROUTES = {
   REGISTER: '/register',
   DASHBOARD: '/dashboard',
   TOURS: '/tours',
+  TOUR_DETAILS: '/tour/:tourId/details',
   MY_TOURS: '/my-tours',
   EDIT_TOUR: '/tour/:tourId',
 } as const;

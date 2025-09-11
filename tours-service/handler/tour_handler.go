@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"mime/multipart"
 	"net/http"
 	"strconv"
@@ -101,21 +102,32 @@ func GetAllTours(c *gin.Context) {
 
 func CreateKeyPoint(c *gin.Context) {
 	tourID := c.Param("tourId")
+	fmt.Printf("DEBUG: CreateKeyPoint called for tourID: %s\n", tourID)
 
 	// Get image file (optional)
 	image, err := c.FormFile("image")
 	if err != nil && err.Error() != "http: no such file" {
+		fmt.Printf("DEBUG: Error getting form file: %v\n", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Greška pri čitanju slike"})
 		return
+	}
+	
+	if image != nil {
+		fmt.Printf("DEBUG: Received image file: %s, size: %d\n", image.Filename, image.Size)
+	} else {
+		fmt.Printf("DEBUG: No image file received\n")
 	}
 
 	name := c.PostForm("name")
 	description := c.PostForm("description")
 	longitudeStr := c.PostForm("longitude")
 	latitudeStr := c.PostForm("latitude")
+	
+	fmt.Printf("DEBUG: Form data - name: %s, description: %s, longitude: %s, latitude: %s\n", 
+		name, description, longitudeStr, latitudeStr)
 
-	if name == "" || description == "" || longitudeStr == "" || latitudeStr == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Sva polja su obavezna (name, description, longitude, latitude)"})
+	if name == "" || longitudeStr == "" || latitudeStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Name, longitude, and latitude are required"})
 		return
 	}
 

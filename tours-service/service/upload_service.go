@@ -16,8 +16,11 @@ func UploadImage(file *multipart.FileHeader) (string, error) {
 }
 
 func UploadImageToDir(file *multipart.FileHeader, subDir string) (string, error) {
+	fmt.Printf("DEBUG: UploadImageToDir called with file: %s, subDir: %s\n", file.Filename, subDir)
+	
 	// Validate file size (max 5MB)
 	if file.Size > 5*1024*1024 {
+		fmt.Printf("DEBUG: File too large: %d bytes\n", file.Size)
 		return "", fmt.Errorf("slika je prevelika (max 5MB)")
 	}
 
@@ -41,11 +44,14 @@ func UploadImageToDir(file *multipart.FileHeader, subDir string) (string, error)
 	
 	// Create full path with subdirectory
 	uploadDir := filepath.Join("uploads", subDir)
+	fmt.Printf("DEBUG: Creating directory: %s\n", uploadDir)
 	if err := os.MkdirAll(uploadDir, 0755); err != nil {
+		fmt.Printf("DEBUG: Failed to create directory: %v\n", err)
 		return "", fmt.Errorf("greška prilikom kreiranja direktorijuma")
 	}
 	
 	imagePath := filepath.Join(uploadDir, filename)
+	fmt.Printf("DEBUG: Full image path: %s\n", imagePath)
 
 	// Open the file
 	src, err := file.Open()
@@ -62,10 +68,12 @@ func UploadImageToDir(file *multipart.FileHeader, subDir string) (string, error)
 	defer dst.Close()
 
 	// Copy the file content
-	_, err = dst.ReadFrom(src)
+	bytesWritten, err := dst.ReadFrom(src)
 	if err != nil {
+		fmt.Printf("DEBUG: Failed to copy file content: %v\n", err)
 		return "", fmt.Errorf("greška prilikom čuvanja fajla")
 	}
-
+	
+	fmt.Printf("DEBUG: Successfully saved file: %s (%d bytes written)\n", imagePath, bytesWritten)
 	return imagePath, nil
 }

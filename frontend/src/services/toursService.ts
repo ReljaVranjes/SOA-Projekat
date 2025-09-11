@@ -1,15 +1,25 @@
 import axios from 'axios';
 import api from '../api';
 
+export enum TourLevel {
+  Easy = 'Easy',
+  Medium = 'Medium',
+  Hard = 'Hard'
+}
 
+export enum TourStatus {
+  Draft = 'Draft',
+  Published = 'Published',
+  Archived = 'Archived'
+}
 
 export interface Tour {
   id: string;
   name: string;
   description: string;
-  level: string;
+  level: TourLevel;
   tags: string[];
-  status: string;
+  status: TourStatus;
   price: number;
   duration: number;
   maxPeople: number;
@@ -29,7 +39,7 @@ export interface KeyPoint {
 }
 
 export interface Review {
-  _id: string;
+  id: string;
   tourID: string;
   touristID: string;
   rate: number;
@@ -60,6 +70,11 @@ export const toursService = {
 
   createTour: async (tourData: Partial<Tour>): Promise<Tour> => {
     const response = await api.post(`${prefix}/tours`, tourData);
+    return response.data;
+  },
+
+  updateTour: async (tourId: string, tourData: Partial<Tour>): Promise<Tour> => {
+    const response = await api.put(`${prefix}/tours/${tourId}`, tourData);
     return response.data;
   },
 
