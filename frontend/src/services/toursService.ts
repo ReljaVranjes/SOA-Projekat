@@ -39,7 +39,7 @@ export interface KeyPoint {
 }
 
 export interface Review {
-  _id: string;
+  id: string;
   tourID: string;
   touristID: string;
   rate: number;

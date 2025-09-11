@@ -6,6 +6,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Tours from './pages/Tours';
+import TourDetails from './pages/TourDetails';
 import MyTours from './pages/MyTours';
 import EditTour from './pages/EditTour';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -33,6 +34,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Tours />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.TOUR_DETAILS}
+              element={
+                <ProtectedRoute>
+                  <TourDetails />
                 </ProtectedRoute>
               }
             />

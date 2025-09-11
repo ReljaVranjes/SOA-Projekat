@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toursService, Tour } from '../services/toursService';
 import { useApiHandler } from '../utils/handleApi';
 
 const Tours: React.FC = () => {
+  const navigate = useNavigate();
   const [tours, setTours] = useState<Tour[]>([]);
   const [filteredTours, setFilteredTours] = useState<Tour[]>([]);
   const [levelFilter, setLevelFilter] = useState('');
@@ -167,7 +169,10 @@ const Tours: React.FC = () => {
 
                 <div className="flex justify-between items-center">
                   <span className="text-2xl font-bold text-blue-600">${tour.price}</span>
-                  <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors">
+                  <button 
+                    onClick={() => navigate(`/tour/${tour.id}/details`)}
+                    className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
+                  >
                     View Details
                   </button>
                 </div>
