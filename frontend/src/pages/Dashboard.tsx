@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { ROUTES } from '../constants/routes';
 import PositionSimulator from '../components/PositionSimulator';
-import { locationService, Location } from '../services/locationService';
+import { locationService } from '../services/locationService';
+import { Location } from '../types/user';
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
@@ -121,14 +122,32 @@ const Dashboard: React.FC = () => {
           </div>
         )}
 
+        {user?.role === 'Admin' && (
+          <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+            <h3 className="text-lg font-semibold mb-2 text-red-600">Admin Panel</h3>
+            <p className="text-gray-600 mb-4">
+              Manage users and system settings
+            </p>
+            <Link
+              to={ROUTES.ADMIN}
+              className="inline-block bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors"
+            >
+              Admin Panel
+            </Link>
+          </div>
+        )}
+
         <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
           <h3 className="text-lg font-semibold mb-2 text-purple-600">Profile</h3>
           <p className="text-gray-600 mb-4">
             Update your profile and preferences
           </p>
-          <button className="inline-block bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 transition-colors">
+          <Link
+            to={ROUTES.PROFILE}
+            className="inline-block bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 transition-colors"
+          >
             Edit Profile
-          </button>
+          </Link>
         </div>
       </div>
 
@@ -151,35 +170,37 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Position Simulator Button - Fixed in bottom right corner */}
-      <button
-        onClick={openSimulator}
-        className="fixed bottom-6 right-6 bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 transition-colors z-40"
-        title="Position Simulator"
-      >
-        <svg
-          className="w-6 h-6"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          xmlns="http://www.w3.org/2000/svg"
+      {user?.role === 'Tourist' && (
+        <button
+          onClick={openSimulator}
+          className="fixed bottom-6 right-6 bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 transition-colors z-40"
+          title="Position Simulator"
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-          />
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-          />
-        </svg>
-      </button>
+          <svg
+            className="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+            />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+            />
+          </svg>
+        </button>
+      )}
 
       {/* Current Location Display */}
-      {currentLocation && (
+      {user?.role === 'Tourist' && currentLocation && (
         <div className="fixed bottom-6 left-6 bg-white p-3 rounded-lg shadow-lg border border-gray-200 z-40">
           <div className="text-sm text-gray-600">
             <div className="font-semibold text-gray-800">Current Location:</div>

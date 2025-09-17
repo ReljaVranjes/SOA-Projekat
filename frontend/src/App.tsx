@@ -9,6 +9,8 @@ import Tours from './pages/Tours';
 import TourDetails from './pages/TourDetails';
 import MyTours from './pages/MyTours';
 import EditTour from './pages/EditTour';
+import Profile from './pages/Profile';
+import Admin from './pages/Admin';
 import ProtectedRoute from './components/ProtectedRoute';
 import { ROUTES } from './constants/routes';
 
@@ -58,6 +60,22 @@ function App() {
               element={
                 <ProtectedRoute requireRoles={["Guide"]}>
                   <EditTour />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.PROFILE}
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.ADMIN}
+              element={
+                <ProtectedRoute requireRoles={["Admin"]}>
+                  <Admin />
                 </ProtectedRoute>
               }
             />

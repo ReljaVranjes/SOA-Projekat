@@ -97,6 +97,29 @@ func BlockUser(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Korisnik je uspešno blokiran"})
 }
 
+func UnblockUser(c *gin.Context) {
+	roleStr, exists := c.Get("role")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Neautorizovan pristup"})
+		return
+	}
+
+	userID := c.Param("id")
+	if userID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID korisnika je obavezan"})
+		return
+	}
+
+	role := model.UserRole(roleStr.(string))
+	err := service.UnblockUser(role, userID)
+	if err != nil {
+		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Korisnik je uspešno odblokiran"})
+}
+
 func GetProfile(c *gin.Context) {
 	email, exists := c.Get("email")
 	if !exists {
@@ -113,6 +136,12 @@ func GetProfile(c *gin.Context) {
 	user, err := service.GetUserProfile(emailStr)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Proveri da li je korisnik blokiran
+	if user.Status == model.Blocked {
+		c.JSON(http.StatusForbidden, gin.H{"error": "vaš nalog je blokiran. kontaktirajte administratora"})
 		return
 	}
 

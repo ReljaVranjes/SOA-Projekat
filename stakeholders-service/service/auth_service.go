@@ -99,6 +99,11 @@ func LoginUser(email, password string) (LoginResponse, error) {
 		return LoginResponse{}, errors.New("korisnik ne postoji")
 	}
 
+	// Proveri da li je korisnik blokiran
+	if user.Status == model.Blocked {
+		return LoginResponse{}, errors.New("vaš nalog je blokiran. kontaktirajte administratora")
+	}
+
 	// Proveri lozinku
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
 		return LoginResponse{}, errors.New("pogrešna lozinka")

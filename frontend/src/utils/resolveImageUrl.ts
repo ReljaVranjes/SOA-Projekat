@@ -8,12 +8,7 @@ const API_BASE =
 export const resolveImageUrl = (p?: string | null) => {
   if (!p) return '';
   if (/^https?:\/\//i.test(p)) return p;             // already absolute
-  
-  // If path doesn't start with uploads/, prepend it
-  const cleanPath = p.startsWith('/') ? p.substring(1) : p;
-  if (!cleanPath.startsWith('uploads/')) {
-    return `${API_BASE}/uploads/${cleanPath}`;
-  }
-  
-  return `${API_BASE}/${cleanPath}`;
+  const clean = p.replace(/^\/?(static)\//, ''); // tolerate variants
+  console.log(`${API_BASE}/api/tours-service/${clean}`);
+  return `${API_BASE}/api/tours-service/${clean}`;
 };
