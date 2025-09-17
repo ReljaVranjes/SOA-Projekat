@@ -1,15 +1,11 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authService, AuthResponse } from '../services/authService';
-
-interface User {
-  email: string;
-  role: string;
-  id: string;
-}
+import { User } from '../types/user';
 
 interface AuthContextType {
   isAuthenticated: boolean;
   user: User | null;
+  setUser: (user: User | null) => void;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, role: string) => Promise<void>;
   logout: () => void;
@@ -54,9 +50,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const setUserData = (data: AuthResponse) => {
-    const userData = { email: data.user.email, role: data.user.role, id: data.user.id };
     localStorage.setItem('token', data.token);
-    setUser(userData);
+    setUser(data.user);
     setIsAuthenticated(true);
   };
 
@@ -79,6 +74,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const value = {
     isAuthenticated,
     user,
+    setUser,
     login,
     register,
     logout,

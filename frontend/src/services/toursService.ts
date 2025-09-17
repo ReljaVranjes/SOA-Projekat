@@ -87,7 +87,6 @@ export const toursService = {
   },
 
   updateKeyPoint: async (keyPointId: string, keyPointData: FormData, tourId: string): Promise<KeyPoint> => {
-    console.log("UPDATE KP DATA", keyPointData)
     const response = await api.put(`${prefix}/tours/${tourId}/keypoints/${keyPointId}`, keyPointData)
     return response.data;
   },

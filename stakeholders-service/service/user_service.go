@@ -84,3 +84,16 @@ func BlockUser(adminRole model.UserRole, userID string) error {
 
 	return nil
 }
+
+func UnblockUser(adminRole model.UserRole, userID string) error {
+	if adminRole != model.Admin {
+		return errors.New("pristup dozvoljen samo administratorima")
+	}
+
+	err := repo.UpdateUserStatus(userID, model.Active)
+	if err != nil {
+		return errors.New("greška prilikom odblokiranje korisnika")
+	}
+
+	return nil
+}
