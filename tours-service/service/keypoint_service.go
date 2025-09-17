@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"mime/multipart"
 	"tours-service/model"
 	"tours-service/repo"
@@ -13,9 +14,8 @@ func CreateKeyPoint(keyPointData model.KeyPoint, image *multipart.FileHeader) (m
 	if keyPointData.Name == "" {
 		return model.KeyPoint{}, errors.New("ime ključne tačke je obavezno")
 	}
-	if keyPointData.Longitude == 0 || keyPointData.Latitude == 0 {
-		return model.KeyPoint{}, errors.New("koordinate su obavezne")
-	}
+	// Note: Coordinates can legitimately be 0, so we don't validate for non-zero values
+	// Validation for required coordinates should be done at the handler level
 	if keyPointData.TourID.IsZero() {
 		return model.KeyPoint{}, errors.New("tour ID je obavezan")
 	}
@@ -23,11 +23,16 @@ func CreateKeyPoint(keyPointData model.KeyPoint, image *multipart.FileHeader) (m
 	// Handle image upload if provided
 	var imagePath string
 	if image != nil {
+		fmt.Printf("DEBUG: Uploading image: %s, size: %d bytes\n", image.Filename, image.Size)
 		uploadedPath, err := UploadImageToDir(image, "keypoints")
 		if err != nil {
+			fmt.Printf("DEBUG: Image upload failed: %v\n", err)
 			return model.KeyPoint{}, errors.New("greška prilikom upload-a slike: " + err.Error())
 		}
+		fmt.Printf("DEBUG: Image uploaded successfully to: %s\n", uploadedPath)
 		imagePath = uploadedPath
+	} else {
+		fmt.Printf("DEBUG: No image provided\n")
 	}
 
 	keyPoint := model.KeyPoint{

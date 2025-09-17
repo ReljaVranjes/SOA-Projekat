@@ -1,6 +1,12 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authService, AuthResponse } from '../services/authService';
-import { User } from '../types/user';
+import { getTokenClaims, isTokenExpired } from '../utils/jwtDecoder';
+
+interface User {
+  email: string;
+  role: string;
+  id: string;
+}
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -30,16 +36,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      verifyToken();
+      verifyToken(token);
     } else {
       setLoading(false);
     }
   }, []);
 
-  const verifyToken = async () => {
+  const verifyToken = (token: string) => {
     try {
-      const userData = await authService.verifyToken();
-      setUserData(userData);
+      if (isTokenExpired(token)) {
+        throw new Error('Token expired');
+      }
+
+      const claims = getTokenClaims(token);
+      if (!claims) {
+        throw new Error('Invalid token');
+      }
+
+      const userData = {
+        email: claims.email,
+        role: claims.role,
+        id: claims.id
+      };
+      setUser(userData);
+      setIsAuthenticated(true);
     } catch (error) {
       localStorage.removeItem('token');
       setIsAuthenticated(false);

@@ -6,6 +6,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Tours from './pages/Tours';
+import TourDetails from './pages/TourDetails';
 import MyTours from './pages/MyTours';
 import EditTour from './pages/EditTour';
 import Profile from './pages/Profile';
@@ -39,6 +40,14 @@ function App() {
               }
             />
             <Route
+              path={ROUTES.TOUR_DETAILS}
+              element={
+                <ProtectedRoute>
+                  <TourDetails />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path={ROUTES.MY_TOURS}
               element={
                 <ProtectedRoute requireRoles={["Guide"]}>
@@ -46,7 +55,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
-             <Route
+            <Route
               path={ROUTES.EDIT_TOUR}
               element={
                 <ProtectedRoute requireRoles={["Guide"]}>

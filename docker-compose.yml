@@ -17,14 +17,14 @@ services:
     image: mongo-express:1.0.2-20
     container_name: mongo-express
     depends_on:
-    - mongodb
+      - mongodb
     ports:
-    - "8081:8081"
+      - "8081:8081"
     environment:
       ME_CONFIG_MONGODB_URL: mongodb://admin:password@mongodb:27017/?authSource=admin
       ME_CONFIG_BASICAUTH_USERNAME: admin
       ME_CONFIG_BASICAUTH_PASSWORD: admin
-  
+
   gateway:
     build: ./gateway
     container_name: gateway
