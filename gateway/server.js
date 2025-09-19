@@ -74,5 +74,6 @@ app.listen(PORT, () => {
   console.log('📡 Services:');
   console.log(`   Blog: ${process.env.BLOG_SERVICE_URL || 'http://localhost:3000'}`);
   console.log(`   Stakeholders: ${process.env.STAKEHOLDERS_SERVICE_URL || 'http://localhost:4000'}`);
+  console.log(`   Stakeholders gRPC: ${process.env.STAKEHOLDERS_GRPC_URL || 'http://localhost:4001'}`);
   console.log(`   Tours: ${process.env.TOURS_SERVICE_URL || 'http://localhost:5000'}`);
 });

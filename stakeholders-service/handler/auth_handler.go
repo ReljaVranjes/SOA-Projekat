@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
@@ -8,6 +9,7 @@ import (
 
 	"stakeholders-service/model"
 	"stakeholders-service/service"
+	pb "stakeholders-service/proto/block"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -16,6 +18,11 @@ import (
 type LoginReq struct {
     Email    string `json:"email"    form:"email"    binding:"required,email"`
     Password string `json:"password" form:"password" binding:"required"`
+}
+
+//  implements the gRPC service
+type BlockHandler struct {
+	pb.UnimplementedBlockServiceServer
 }
 
 func ValidateToken(c *gin.Context) {
@@ -163,6 +170,8 @@ func GetAllUsers(c *gin.Context) {
 }
 
 func BlockUser(c *gin.Context) {
+	log.Printf("🟢 [HTTP] BlockUser called with user_id: %s", c.Param("id"))
+	log.Printf("🟢 [HTTP] Request headers: %v", c.Request.Header)
 	roleStr, exists := c.Get("role")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Neautorizovan pristup"})
@@ -183,6 +192,37 @@ func BlockUser(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Korisnik je uspešno blokiran"})
+}
+
+// BlockUser handles gRPC BlockUser calls
+func (s *BlockHandler) BlockUser(ctx context.Context, req *pb.BlockUserRequest) (*pb.BlockUserResponse, error) {
+	log.Printf("🔵 [gRPC] BlockUser called with role: %v, user_id: %s", req.Role, req.UserId)
+	// Convert proto role to model role
+	var role model.UserRole
+	switch req.Role {
+	case pb.UserRole_USER_ROLE_USER:
+		role = model.Tourist
+	case pb.UserRole_USER_ROLE_ADMIN:
+		role = model.Admin
+	case pb.UserRole_USER_ROLE_GUIDE:
+		role = model.Guide
+	default:
+		return &pb.BlockUserResponse{
+			Message: "Invalid role",
+		}, nil
+	}
+
+	// Call your existing service
+	err := service.BlockUser(role, req.UserId)
+	if err != nil {
+		return &pb.BlockUserResponse{
+			Message: "Failed to block user: " + err.Error(),
+		}, nil
+	}
+
+	return &pb.BlockUserResponse{
+		Message: "User blocked successfully",
+	}, nil
 }
 
 func UnblockUser(c *gin.Context) {

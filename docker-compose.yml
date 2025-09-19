@@ -39,6 +39,7 @@ services:
       FRONTEND_URL: "http://localhost:3001"
       BLOG_SERVICE_URL: "http://blog-service:3000"
       STAKEHOLDERS_SERVICE_URL: "http://stakeholders-service:4000"
+      STAKEHOLDERS_GRPC_URL: "stakeholders-service:4001"
       TOURS_SERVICE_URL: "http://tours-service:5000"
 
   stakeholders-service:
