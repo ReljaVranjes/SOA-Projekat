@@ -31,6 +31,11 @@ func SetupRouter() *gin.Engine {
 	auth := r.Group("/")
 	auth.Use(middleware.HeaderAuthMiddleware())
 	auth.GET("/tour/:tourId", handler.GetTourByID)
+	
+	// Token endpoints
+	auth.POST("/tokens/generate", handler.GenerateTokens)         // SAGA: Generate purchase tokens
+	auth.DELETE("/tokens/delete", handler.DeleteTokens)          // SAGA: Rollback tokens
+	auth.GET("/tours/purchased", handler.GetPurchasedTours)      // Get user's purchased tours
 
 	// Tourist routes (authenticated users can review)
 	touristRoutes := auth.Group("/")

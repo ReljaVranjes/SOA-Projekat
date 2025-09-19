@@ -373,7 +373,7 @@ func AddBalance(c *gin.Context) {
 		return
 	}
 
-	targetUserID := c.Param("userId")
+	targetUserID := c.Param("id")
 	if targetUserID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "User ID je obavezan"})
 		return
@@ -409,7 +409,7 @@ func SetBalance(c *gin.Context) {
 		return
 	}
 
-	targetUserID := c.Param("userId")
+	targetUserID := c.Param("id")
 	if targetUserID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "User ID je obavezan"})
 		return

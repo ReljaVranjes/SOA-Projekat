@@ -1,6 +1,7 @@
 package router
 
 import (
+	"payment-service/handler"
 	"payment-service/middleware"
 
 	"github.com/gin-contrib/cors"
@@ -22,12 +23,13 @@ func SetupRouter() *gin.Engine {
 	auth := r.Group("/")
 	auth.Use(middleware.HeaderAuthMiddleware())
 	{
-		// Cart endpoints (will be implemented later)
-		// auth.POST("/cart/items", handler.AddToCart)
-		// auth.GET("/cart", handler.GetCart)
-		// auth.DELETE("/cart/items/:tourId", handler.RemoveFromCart)
-		// auth.DELETE("/cart", handler.ClearCart)
-
+		// Cart endpoints
+		auth.POST("/cart/items", handler.AddToCart)                      // Add tour to cart
+		auth.GET("/cart", handler.GetCart)                               // Get user's cart
+		auth.DELETE("/cart/items/:tourId", handler.RemoveFromCart)       // Remove tour from cart
+		auth.PUT("/cart/items/:tourId", handler.UpdateCartItem)          // Update cart item
+		auth.DELETE("/cart", handler.ClearCart)                          // Clear entire cart
+		
 		// Checkout and orders (will be implemented later)
 		// auth.POST("/checkout", handler.Checkout)
 		// auth.GET("/orders", handler.GetUserOrders)
