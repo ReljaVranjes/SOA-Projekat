@@ -11,9 +11,6 @@ import (
 	"stakeholders-service/service"
 	pb "stakeholders-service/proto/block"
 
-	"stakeholders-service/model"
-	"stakeholders-service/service"
-
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
