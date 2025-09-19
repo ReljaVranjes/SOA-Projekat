@@ -344,3 +344,94 @@ func UpdateLocation(c *gin.Context) {
 		"user":    updatedUser,
 	})
 }
+
+// GetBalance - user gets their current balance
+func GetBalance(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Korisnik nije autentifikovan"})
+		return
+	}
+
+	user, err := service.GetUserByID(userID.(string))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Greška prilikom dobavljanja korisnika"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"balance": user.Balance,
+	})
+}
+
+// AddBalance - admin adds balance to any user
+func AddBalance(c *gin.Context) {
+	// Check if user is admin
+	userRole, exists := c.Get("role")
+	if !exists || userRole.(string) != "Admin" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Pristup dozvoljen samo administratorima"})
+		return
+	}
+
+	targetUserID := c.Param("userId")
+	if targetUserID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "User ID je obavezan"})
+		return
+	}
+
+	var request struct {
+		Amount float64 `json:"amount" binding:"required,min=0"`
+	}
+	
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Neispravan format zahteva"})
+		return
+	}
+
+	err := service.AddUserBalance(targetUserID, request.Amount)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Balans je uspešno dodat",
+		"amount":  request.Amount,
+	})
+}
+
+// SetBalance - admin sets exact balance for any user
+func SetBalance(c *gin.Context) {
+	// Check if user is admin
+	userRole, exists := c.Get("role")
+	if !exists || userRole.(string) != "Admin" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Pristup dozvoljen samo administratorima"})
+		return
+	}
+
+	targetUserID := c.Param("userId")
+	if targetUserID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "User ID je obavezan"})
+		return
+	}
+
+	var request struct {
+		Balance float64 `json:"balance" binding:"required,min=0"`
+	}
+	
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Neispravan format zahteva"})
+		return
+	}
+
+	err := service.SetUserBalance(targetUserID, request.Balance)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Balans je uspešno postavljen",
+		"balance": request.Balance,
+	})
+}

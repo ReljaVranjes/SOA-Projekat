@@ -94,3 +94,56 @@ func UpdateUserProfile(email string, updates bson.M) error {
 	_, err := collection.UpdateOne(ctx, filter, update)
 	return err
 }
+
+// FindUserByID finds user by ID
+func FindUserByID(userID string) (model.User, error) {
+	objectID, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return model.User{}, err
+	}
+
+	collection := config.MongoDB.Collection("users")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var user model.User
+	filter := bson.M{"_id": objectID}
+	err = collection.FindOne(ctx, filter).Decode(&user)
+	return user, err
+}
+
+// UpdateUserBalance adds amount to user's current balance
+func UpdateUserBalance(userID string, amount float64) error {
+	objectID, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return err
+	}
+
+	collection := config.MongoDB.Collection("users")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	filter := bson.M{"_id": objectID}
+	update := bson.M{"$inc": bson.M{"balance": amount}}
+
+	_, err = collection.UpdateOne(ctx, filter, update)
+	return err
+}
+
+// SetUserBalance sets exact balance for user
+func SetUserBalance(userID string, balance float64) error {
+	objectID, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return err
+	}
+
+	collection := config.MongoDB.Collection("users")
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	filter := bson.M{"_id": objectID}
+	update := bson.M{"$set": bson.M{"balance": balance}}
+
+	_, err = collection.UpdateOne(ctx, filter, update)
+	return err
+}

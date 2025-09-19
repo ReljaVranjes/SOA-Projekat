@@ -34,6 +34,7 @@ services:
       - blog-service
       - stakeholders-service
       - tours-service
+      - payment-service
     environment:
       PORT: 8088
       FRONTEND_URL: "http://localhost:3001"
@@ -41,6 +42,7 @@ services:
       STAKEHOLDERS_SERVICE_URL: "http://stakeholders-service:4000"
       STAKEHOLDERS_GRPC_URL: "stakeholders-service:4001"
       TOURS_SERVICE_URL: "http://tours-service:5000"
+      PAYMENT_SERVICE_URL: "http://payment-service:6000"
 
   stakeholders-service:
     build: ./stakeholders-service
@@ -69,6 +71,16 @@ services:
     container_name: tours-service
     ports:
       - "5000:5000"
+    depends_on:
+      - mongodb
+    environment:
+      - MONGO_URI=mongodb://admin:password@mongodb:27017
+
+  payment-service:
+    build: ./payment-service
+    container_name: payment-service
+    ports:
+      - "6000:6000"
     depends_on:
       - mongodb
     environment:
