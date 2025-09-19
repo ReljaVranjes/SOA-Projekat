@@ -11,9 +11,11 @@ import (
 	"stakeholders-service/service"
 	pb "stakeholders-service/proto/block"
 
-	"github.com/gin-gonic/gin"
 	"stakeholders-service/model"
 	"stakeholders-service/service"
+
+	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type LoginReq struct {
@@ -118,13 +120,18 @@ func Register(c *gin.Context) {
 }
 
 func Login(c *gin.Context) {
-	var input model.User
+	var input LoginReq
 
-	// Parsiranje emaila i lozinke iz zahteva
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Neispravan JSON"})
-		return
-	}
+    // Prihvata JSON ili form na osnovu Content-Type (ako želiš striktno JSON, koristi ShouldBindJSON)
+    if err := c.ShouldBind(&input); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{
+            "error":   "Neispravan unos",
+            "details": err.Error(),
+        })
+        return
+    }
+    
+    log.Printf("Parsed login data - Email: %s, Password: [hidden]", input.Email)
 
 	// Servis obrada
 	res, err := service.LoginUser(input.Email, input.Password)
@@ -136,14 +143,15 @@ func Login(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 
-
 func Me(c *gin.Context) {
+	user_id, _ := c.Get("user_id")
 	email, _ := c.Get("email")
 	role, _ := c.Get("role")
 
 	c.JSON(http.StatusOK, gin.H{
-		"email": email,
-		"role":  role,
+		"user_id": user_id,
+		"email":   email,
+		"role":    role,
 	})
 }
 
@@ -339,4 +347,3 @@ func UpdateLocation(c *gin.Context) {
 		"user":    updatedUser,
 	})
 }
-

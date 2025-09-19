@@ -36,7 +36,7 @@ func ConnectToMongo() {
 	}
 
 	MongoClient = client
-	MongoDB = client.Database("stakeholders-db")
+	MongoDB = client.Database("tours-db")
 
 	fmt.Println("✅ Povezano na MongoDB")
 }
