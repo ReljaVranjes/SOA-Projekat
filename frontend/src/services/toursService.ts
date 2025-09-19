@@ -55,7 +55,7 @@ export const toursService = {
   // Tours
   getAllTours: async (): Promise<Tour[]> => {
     const response = await api.get(`${prefix}/tours`);
-    return response.data;
+    return response.data.tours;
   },
 
   getToursByGuide: async (guideId: string): Promise<Tour[]> => {

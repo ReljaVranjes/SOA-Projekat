@@ -67,6 +67,7 @@ services:
       STAKEHOLDERS_SERVICE_URL: "http://stakeholders-service:4000"
       STAKEHOLDERS_GRPC_URL: "stakeholders-service:4001"
       TOURS_SERVICE_URL: "http://tours-service:5000"
+      TOURS_GRPC_URL: "tours-service:5001"
 
   stakeholders-service:
     build: ./stakeholders-service
@@ -94,7 +95,8 @@ services:
     build: ./tours-service
     container_name: tours-service
     ports:
-      - "5000:5000"
+      - "5000:5000"  # REST
+      - "5001:5001"  # gRPC
     depends_on:
       - mongodb
     environment:
