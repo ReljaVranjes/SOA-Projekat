@@ -4,6 +4,8 @@ import (
 	"errors"
 	"stakeholders-service/model"
 	"stakeholders-service/repo"
+
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func GetUserProfile(email string) (model.User, error) {
@@ -96,4 +98,24 @@ func UnblockUser(adminRole model.UserRole, userID string) error {
 	}
 
 	return nil
+}
+
+
+
+func GetUserById(userID string) (model.User, error) {
+	// Convert string ID to ObjectID
+	objectID, err := primitive.ObjectIDFromHex(userID)
+	if err != nil {
+		return model.User{}, errors.New("neispravan ID format")
+	}
+
+	// Find user by ID
+	user, err := repo.FindUserById(objectID)
+	if err != nil {
+		return model.User{}, errors.New("korisnik nije pronađen")
+	}
+
+	// Remove password for security
+	user.Password = ""
+	return user, nil
 }

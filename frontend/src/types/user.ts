@@ -15,4 +15,5 @@ export interface User {
   profileImage: string;
   status: string;
   currentLocation?: Location;
+  name?: string;
 }
