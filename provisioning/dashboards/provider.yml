@@ -7,3 +7,12 @@ providers:
     editable: true
     options:
       path: /etc/grafana/provisioning/dashboards
+
+  - name: Node Exporter
+    type: file
+    options:
+      path:  /var/lib/grafana/dashboards/node-exporter
+  - name: Docker Stats Exporter
+    type: file
+    options:
+      path:  /var/lib/grafana/dashboards/docker-stats-exporter
