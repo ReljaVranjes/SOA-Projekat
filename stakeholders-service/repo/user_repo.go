@@ -94,3 +94,18 @@ func UpdateUserProfile(email string, updates bson.M) error {
 	_, err := collection.UpdateOne(ctx, filter, update)
 	return err
 }
+
+
+func FindUserById(userID primitive.ObjectID) (model.User, error) {
+	collection := config.MongoDB.Collection(getUserCollection())
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	var user model.User
+	err := collection.FindOne(ctx, bson.M{"_id": userID}).Decode(&user)
+	if err != nil {
+		return model.User{}, err
+	}
+
+	return user, nil
+}
