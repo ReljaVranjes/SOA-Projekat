@@ -8,26 +8,26 @@ import (
 	"strings"
 
 	"stakeholders-service/model"
-	"stakeholders-service/service"
 	pb "stakeholders-service/proto/block"
+	"stakeholders-service/service"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
 
 type LoginReq struct {
-    Email    string `json:"email"    form:"email"    binding:"required,email"`
-    Password string `json:"password" form:"password" binding:"required"`
+	Email    string `json:"email"    form:"email"    binding:"required,email"`
+	Password string `json:"password" form:"password" binding:"required"`
 }
 
-//  implements the gRPC service
+// implements the gRPC service
 type BlockHandler struct {
 	pb.UnimplementedBlockServiceServer
 }
 
 func ValidateToken(c *gin.Context) {
 	authHeader := c.GetHeader("Authorization")
-	
+
 	if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"error": "Authorization token missing or malformed",
@@ -92,7 +92,7 @@ func ValidateToken(c *gin.Context) {
 		"user": gin.H{
 			"id":    user.ID.Hex(),
 			"email": user.Email,
-			"role":  string(user.Role),		
+			"role":  string(user.Role),
 		},
 	})
 }
@@ -119,16 +119,16 @@ func Register(c *gin.Context) {
 func Login(c *gin.Context) {
 	var input LoginReq
 
-    // Prihvata JSON ili form na osnovu Content-Type (ako želiš striktno JSON, koristi ShouldBindJSON)
-    if err := c.ShouldBind(&input); err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{
-            "error":   "Neispravan unos",
-            "details": err.Error(),
-        })
-        return
-    }
-    
-    log.Printf("Parsed login data - Email: %s, Password: [hidden]", input.Email)
+	// Prihvata JSON ili form na osnovu Content-Type (ako želiš striktno JSON, koristi ShouldBindJSON)
+	if err := c.ShouldBind(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "Neispravan unos",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	log.Printf("Parsed login data - Email: %s, Password: [hidden]", input.Email)
 
 	// Servis obrada
 	res, err := service.LoginUser(input.Email, input.Password)
@@ -353,7 +353,7 @@ func GetBalance(c *gin.Context) {
 		return
 	}
 
-	user, err := service.GetUserByID(userID.(string))
+	user, err := service.GetUserById(userID.(string))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Greška prilikom dobavljanja korisnika"})
 		return
@@ -382,7 +382,7 @@ func AddBalance(c *gin.Context) {
 	var request struct {
 		Amount float64 `json:"amount" binding:"required,min=0"`
 	}
-	
+
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Neispravan format zahteva"})
 		return
@@ -418,7 +418,7 @@ func SetBalance(c *gin.Context) {
 	var request struct {
 		Balance float64 `json:"balance" binding:"required,min=0"`
 	}
-	
+
 	if err := c.ShouldBindJSON(&request); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Neispravan format zahteva"})
 		return
@@ -433,7 +433,8 @@ func SetBalance(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Balans je uspešno postavljen",
 		"balance": request.Balance,
-  })
+	})
+}
 
 func GetUserById(c *gin.Context) {
 	userID := c.Param("id")
