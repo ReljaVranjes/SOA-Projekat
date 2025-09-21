@@ -100,10 +100,6 @@ func UnblockUser(adminRole model.UserRole, userID string) error {
 
 // AddUserBalance adds amount to user's balance
 func AddUserBalance(userID string, amount float64) error {
-	if amount <= 0 {
-		return errors.New("iznos mora biti pozitivan")
-	}
-
 	err := repo.UpdateUserBalance(userID, amount)
 	if err != nil {
 		return errors.New("greška prilikom dodavanja balansa")

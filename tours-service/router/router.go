@@ -60,5 +60,13 @@ func SetupRouter() *gin.Engine {
 		guideOnly.DELETE("/tours/:tourId/keypoints/:keyPointId", handler.DeleteKeyPoint) // Delete keypoint
 	}
 
+	// Internal service routes (for service-to-service communication)
+	internal := r.Group("/internal")
+	internal.Use(middleware.InternalServiceAuthMiddleware())
+	{
+		internal.POST("/tokens/generate", handler.GenerateTokens)  // SAGA: Generate purchase tokens
+		internal.DELETE("/tokens/delete", handler.DeleteTokens)   // SAGA: Rollback tokens
+	}
+
 	return r
 }

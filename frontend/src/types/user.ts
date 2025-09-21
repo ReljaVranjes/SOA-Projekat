@@ -16,4 +16,5 @@ export interface User {
   status: string;
   currentLocation?: Location;
   name?: string;
+  balance?: number;
 }

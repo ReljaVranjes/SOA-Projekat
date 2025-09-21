@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { CartProvider } from './contexts/CartContext';
 import Layout from './components/Layout';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -12,13 +13,16 @@ import EditTour from './pages/EditTour';
 import Profile from './pages/Profile';
 import Admin from './pages/Admin';
 import Blogs from './pages/Blogs';
+import Cart from './pages/Cart';
+import Orders from './pages/Orders';
 import ProtectedRoute from './components/ProtectedRoute';
 import { ROUTES } from './constants/routes';
 
 function App() {
   return (
     <AuthProvider>
-      <Router>
+      <CartProvider>
+        <Router>
         <Routes>
           <Route path={ROUTES.HOME} element={<Layout />}>
             <Route index element={<Navigate to={ROUTES.DASHBOARD} replace />} />
@@ -88,9 +92,26 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path={ROUTES.CART}
+              element={
+                <ProtectedRoute requireRoles={["Tourist"]}>
+                  <Cart />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.ORDERS}
+              element={
+                <ProtectedRoute requireRoles={["Tourist"]}>
+                  <Orders />
+                </ProtectedRoute>
+              }
+            />
           </Route>
         </Routes>
-      </Router>
+        </Router>
+      </CartProvider>
     </AuthProvider>
   );
 }

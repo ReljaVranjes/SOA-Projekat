@@ -10,6 +10,8 @@ export const ROUTES = {
   PROFILE: '/profile',
   ADMIN: '/admin',
   BLOGS: '/blogs',
+  CART: '/cart',
+  ORDERS: '/orders',
 } as const;
 
 export type RouteKey = keyof typeof ROUTES;

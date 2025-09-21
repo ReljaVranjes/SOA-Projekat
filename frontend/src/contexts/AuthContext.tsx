@@ -1,12 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authService, AuthResponse } from '../services/authService';
 import { getTokenClaims, isTokenExpired } from '../utils/jwtDecoder';
-
-interface User {
-  email: string;
-  role: string;
-  id: string;
-}
+import { User } from '../types/user';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -16,6 +11,7 @@ interface AuthContextType {
   register: (email: string, password: string, role: string) => Promise<void>;
   logout: () => void;
   loading: boolean;
+  refreshBalance: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -42,7 +38,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  const verifyToken = (token: string) => {
+  const verifyToken = async (token: string) => {
     try {
       if (isTokenExpired(token)) {
         throw new Error('Token expired');
@@ -53,12 +49,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error('Invalid token');
       }
 
-      const userData = {
-        email: claims.email,
-        role: claims.role,
-        id: claims.id
-      };
-      setUser(userData);
+      // Fetch full user profile including balance
+      const userProfile = await authService.getProfile();
+      setUser(userProfile);
       setIsAuthenticated(true);
     } catch (error) {
       localStorage.removeItem('token');
@@ -69,20 +62,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const setUserData = (data: AuthResponse) => {
+  const setUserData = async (data: AuthResponse) => {
     localStorage.setItem('token', data.token);
-    setUser(data.user);
+    // Fetch full user profile including balance
+    try {
+      const userProfile = await authService.getProfile();
+      setUser(userProfile);
+    } catch (error) {
+      // Fallback to data from auth response
+      setUser(data.user);
+    }
     setIsAuthenticated(true);
+  };
+
+  const refreshBalance = async () => {
+    if (!isAuthenticated || !user) return;
+
+    try {
+      const balanceData = await authService.getBalance();
+      setUser(prev => prev ? { ...prev, balance: balanceData.balance } : null);
+    } catch (error) {
+      console.error('Failed to refresh balance:', error);
+    }
   };
 
   const login = async (email: string, password: string) => {
     const data = await authService.login({ email, password });
-    setUserData(data);
+    await setUserData(data);
   };
 
   const register = async (email: string, password: string, role: string) => {
     const data = await authService.register({ email, password, role });
-    setUserData(data);
+    await setUserData(data);
   };
 
   const logout = () => {
@@ -99,6 +110,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     register,
     logout,
     loading,
+    refreshBalance,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

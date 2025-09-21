@@ -12,6 +12,7 @@ import (
 	"stakeholders-service/config"
 	"stakeholders-service/handler"
 	pb "stakeholders-service/proto/block"
+	balancepb "stakeholders-service/proto/balance"
 	"stakeholders-service/router"
 )
 
@@ -41,6 +42,9 @@ func startGrpcServer() {
 
     blockHandler := handler.BlockHandler{}
     pb.RegisterBlockServiceServer(grpsServer, &blockHandler)
+
+    balanceHandler := handler.BalanceHandler{}
+    balancepb.RegisterBalanceServiceServer(grpsServer, &balanceHandler)
 
 	log.Println("🚀 gRPC server running on port 4001")
 	if err := grpsServer.Serve(lis); err != nil {
