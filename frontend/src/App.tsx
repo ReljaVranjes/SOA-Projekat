@@ -1,16 +1,25 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
-import Layout from './components/Layout';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Dashboard from './pages/Dashboard';
-import Tours from './pages/Tours';
-import MyTours from './pages/MyTours';
-import EditTour from './pages/EditTour';
-import FollowUsers from './pages/FollowUsers';
-import ProtectedRoute from './components/ProtectedRoute';
-import { ROUTES } from './constants/routes';
+import React from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+import { AuthProvider } from "./contexts/AuthContext";
+import Layout from "./components/Layout";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import Dashboard from "./pages/Dashboard";
+import Tours from "./pages/Tours";
+import TourDetails from "./pages/TourDetails";
+import MyTours from "./pages/MyTours";
+import EditTour from "./pages/EditTour";
+import FollowUsers from "./pages/FollowUsers";
+import Profile from "./pages/Profile";
+import Admin from "./pages/Admin";
+import Blogs from "./pages/Blogs";
+import ProtectedRoute from "./components/ProtectedRoute";
+import { ROUTES } from "./constants/routes";
 
 function App() {
   return (
@@ -38,6 +47,14 @@ function App() {
               }
             />
             <Route
+              path={ROUTES.TOUR_DETAILS}
+              element={
+                <ProtectedRoute>
+                  <TourDetails />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path={ROUTES.MY_TOURS}
               element={
                 <ProtectedRoute requireRoles={["Guide"]}>
@@ -45,7 +62,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
-             <Route
+            <Route
               path={ROUTES.EDIT_TOUR}
               element={
                 <ProtectedRoute requireRoles={["Guide"]}>
@@ -58,6 +75,30 @@ function App() {
               element={
                 <ProtectedRoute>
                   <FollowUsers />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.PROFILE}
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.ADMIN}
+              element={
+                <ProtectedRoute requireRoles={["Admin"]}>
+                  <Admin />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.BLOGS}
+              element={
+                <ProtectedRoute>
+                  <Blogs />
                 </ProtectedRoute>
               }
             />

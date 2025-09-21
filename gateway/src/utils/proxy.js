@@ -22,7 +22,7 @@ const proxyRequest = (targetUrl) => {
           ...req.headers,
           host: url.host, // Važno za target server
         },
-        timeout: 5000,
+        timeout: 30000,
       };
 
       console.log(`🔄 Proxying: ${req.method} ${targetUrl}${req.path}`);

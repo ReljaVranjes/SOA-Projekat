@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package tours;
+
+// Request za dobijanje svih tura - prazno za jednostavan GET /tours
+message GetToursRequest {
+  // Prazno - samo pozivamo GET /tours bez parametara
+}
+
+// Pojedinačna tura
+message Tour {
+  string id = 1;              // _id (ObjectId kao string)
+  string name = 2;            // name
+  string description = 3;     // description  
+  string level = 4;           // level (ne difficulty)
+  repeated string tags = 5;   // tags array
+  string status = 6;          // status
+  double price = 7;           // price
+  int32 duration = 8;         // duration (ne duration_days)
+  int32 max_people = 9;       // maxPeople
+  string key_points = 10;     // keyPoints (nullable field)
+  string guide_id = 11;       // guideId (ObjectId kao string)
+  string created_at = 12;     // createdAt
+  string updated_at = 13;     // updatedAt
+}
+
+// Response sa listom tura
+message GetToursResponse {
+  repeated Tour tours = 1;
+  int32 total_count = 2;
+  bool success = 3;
+  string message = 4;
+}
+
+// Tours servis
+service ToursService {
+  rpc GetTours(GetToursRequest) returns (GetToursResponse);
+}

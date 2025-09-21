@@ -10,6 +10,8 @@ app.use(
   cors({
     origin: process.env.FRONTEND_URL || "http://localhost:3001",
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Origin", "Content-Type", "Authorization"],
   })
 );
 
@@ -22,10 +24,11 @@ app.use((req, res, next) => {
 });
 
 // Import routes
+const followersRoutes = require("./src/routes/followersRoutes");
 const blogRoutes = require("./src/routes/blogRoutes");
 const stakeholdersRoutes = require("./src/routes/stakeholdersRoutes");
 const toursRoutes = require("./src/routes/toursRoutes");
-const followersRoutes = require("./src/routes/followersRoutes");
+const paymentRoutes = require("./src/routes/paymentRoutes");
 
 // Health check
 app.get("/health", (req, res) => {
@@ -41,16 +44,17 @@ app.get("/info", (req, res) => {
   res.json({
     name: "API Gateway",
     version: "1.0.0",
-    services: ["blog", "stakeholders", "tours", "followers"],
+    services: ["blog", "stakeholders", "tours", "followers", "payment"],
     environment: process.env.NODE_ENV || "development",
   });
 });
 
 // Mount routes
+app.use("/api/followers-service", followersRoutes);
 app.use("/api/blog-service", blogRoutes);
 app.use("/api/stakeholders-service", stakeholdersRoutes);
 app.use("/api/tours-service", toursRoutes);
-app.use("/api/followers-service", followersRoutes);
+app.use("/api/payment-service", paymentRoutes);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -64,6 +68,7 @@ app.use("/", (req, res) => {
       "/api/stakeholders-service",
       "/api/tours-service",
       "/api/followers-service",
+      "/api/payment-service",
       "/health",
       "/info",
     ],
@@ -94,8 +99,11 @@ app.listen(PORT, () => {
     `   Tours: ${process.env.TOURS_SERVICE_URL || "http://localhost:5000"}`
   );
   console.log(
+    `   Payment: ${process.env.PAYMENT_SERVICE_URL || "http://localhost:6000"}`
+  );
+  console.log(
     `   Followers: ${
-      process.env.FOLLOWERS_SERVICE_URL || "http://localhost:6000"
+      process.env.FOLLOWERS_SERVICE_URL || "http://localhost:7000"
     }`
   );
 });

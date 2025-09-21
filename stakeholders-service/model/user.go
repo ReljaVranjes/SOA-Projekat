@@ -70,4 +70,5 @@ type User struct {
 	Biography       string             `bson:"biography" json:"biography"`
 	Motto           string             `bson:"motto" json:"motto"`
 	CurrentLocation *Location          `bson:"currentLocation,omitempty" json:"currentLocation,omitempty"`
+	Balance         float64            `bson:"balance" json:"balance"`
 }

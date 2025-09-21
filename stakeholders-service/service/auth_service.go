@@ -24,6 +24,7 @@ type PublicUser struct {
 	ProfileImage string            `json:"profileImage"`
 	Biography    string            `json:"biography"`
 	Motto        string            `json:"motto"`
+	Balance      float64           `json:"balance"`
 }
 
 // LoginResponse is what /login returns now.
@@ -44,6 +45,7 @@ func toPublicUser(u model.User) PublicUser {
 		ProfileImage: u.ProfileImage,
 		Biography:    u.Biography,
 		Motto:        u.Motto,
+		Balance:      u.Balance,
 	}
 }
 
@@ -64,8 +66,9 @@ func RegisterUser(user model.User) (string, error) {
 	}
 	user.Password = string(hashedPassword)
 
-	// 2.1. Postavi status na Active
+	// 2.1. Postavi status na Active i početni balans
 	user.Status = model.Active
+	user.Balance = 1000.0 // Početni balans od 1000
 
 	// 3. Sačuvaj korisnika
 	if err := repo.CreateUser(user); err != nil {
@@ -97,6 +100,11 @@ func LoginUser(email, password string) (LoginResponse, error) {
 	user, err := repo.FindUserByEmail(email)
 	if err != nil {
 		return LoginResponse{}, errors.New("korisnik ne postoji")
+	}
+
+	// Proveri da li je korisnik blokiran
+	if user.Status == model.Blocked {
+		return LoginResponse{}, errors.New("vaš nalog je blokiran. kontaktirajte administratora")
 	}
 
 	// Proveri lozinku

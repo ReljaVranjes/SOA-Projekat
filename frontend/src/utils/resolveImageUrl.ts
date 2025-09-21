@@ -8,6 +8,7 @@ const API_BASE =
 export const resolveImageUrl = (p?: string | null) => {
   if (!p) return '';
   if (/^https?:\/\//i.test(p)) return p;             // already absolute
-  const clean = p.replace(/^\/?(uploads|static)\//, ''); // tolerate variants
-  return `${API_BASE}/${clean}`;
+  const clean = p.replace(/^\/?(static)\//, ''); // tolerate variants
+  console.log(`${API_BASE}/api/tours-service/${clean}`);
+  return `${API_BASE}/api/tours-service/${clean}`;
 };

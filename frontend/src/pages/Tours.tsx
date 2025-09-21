@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { toursService, Tour } from '../services/toursService';
 import { useApiHandler } from '../utils/handleApi';
 
 const Tours: React.FC = () => {
+  const navigate = useNavigate();
   const [tours, setTours] = useState<Tour[]>([]);
   const [filteredTours, setFilteredTours] = useState<Tour[]>([]);
   const [levelFilter, setLevelFilter] = useState('');
@@ -26,7 +28,7 @@ const Tours: React.FC = () => {
         errorMessage: 'Failed to load tours'
       }
     );
-    
+
     if (result) {
       const publishedTours = result.filter(tour => tour.status === 'Published');
       setTours(publishedTours);
@@ -46,7 +48,7 @@ const Tours: React.FC = () => {
       filtered = filtered.filter(tour =>
         tour.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         tour.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        tour.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+        (tour.tags && tour.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase())))
       );
     }
 
@@ -93,7 +95,7 @@ const Tours: React.FC = () => {
       )}
 
       <div className="flex flex-wrap gap-4 mb-6">
-        <select 
+        <select
           value={levelFilter}
           onChange={(e) => setLevelFilter(e.target.value)}
           className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -103,8 +105,8 @@ const Tours: React.FC = () => {
           <option value="Medium">Medium</option>
           <option value="Hard">Hard</option>
         </select>
-        
-        <select 
+
+        <select
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value)}
           className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -133,7 +135,7 @@ const Tours: React.FC = () => {
           {filteredTours.map((tour) => (
             <div key={tour.id} className="bg-white rounded-lg shadow-md overflow-hidden">
               <div className="h-48 bg-gradient-to-r from-blue-500 to-purple-600"></div>
-              
+
               <div className="p-6">
                 <div className="flex justify-between items-start mb-2">
                   <h3 className="text-xl font-semibold text-gray-900">{tour.name}</h3>
@@ -141,10 +143,10 @@ const Tours: React.FC = () => {
                     {tour.level}
                   </span>
                 </div>
-                
+
                 <p className="text-gray-600 mb-4">{tour.description}</p>
-                
-                {tour.tags.length > 0 && (
+
+                {tour.tags && tour.tags.length > 0 && (
                   <div className="flex flex-wrap gap-1 mb-4">
                     {tour.tags.map((tag, index) => (
                       <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
@@ -153,7 +155,7 @@ const Tours: React.FC = () => {
                     ))}
                   </div>
                 )}
-                
+
                 <div className="space-y-2 mb-4">
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Duration:</span>
@@ -164,10 +166,13 @@ const Tours: React.FC = () => {
                     <span className="font-medium">{tour.maxPeople}</span>
                   </div>
                 </div>
-                
+
                 <div className="flex justify-between items-center">
                   <span className="text-2xl font-bold text-blue-600">${tour.price}</span>
-                  <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors">
+                  <button 
+                    onClick={() => navigate(`/tour/${tour.id}/details`)}
+                    className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
+                  >
                     View Details
                   </button>
                 </div>

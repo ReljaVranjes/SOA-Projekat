@@ -1,16 +1,26 @@
 package handler
 
 import (
+	"context"
+	"fmt"
+	"log"
 	"mime/multipart"
 	"net/http"
 	"strconv"
+	"time"
 	"tours-service/middleware"
 	"tours-service/model"
+	pb "tours-service/proto/tours"
 	"tours-service/service"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
+
+
+type ToursHandler struct {
+	pb.UnimplementedToursServiceServer // gRPC interface
+}
 
 func CreateTour(c *gin.Context) {
 	guideID, exists := middleware.GetUserID(c)
@@ -99,23 +109,86 @@ func GetAllTours(c *gin.Context) {
 	c.JSON(http.StatusOK, tours)
 }
 
+// GetTours - gRPC metoda (nova)
+func (h *ToursHandler) GetTours(ctx context.Context, req *pb.GetToursRequest) (*pb.GetToursResponse, error) {
+	log.Println("gRPC GetTours called")
+
+	// Pozivanje ISTE business logike kao HTTP endpoint
+	tours, err := service.GetAllTours()
+	if err != nil {
+		log.Printf("Error fetching tours: %v", err)
+		return &pb.GetToursResponse{
+			Tours:      nil,
+			TotalCount: 0,
+			Success:    false,
+			Message:    "Error fetching tours: " + err.Error(),
+		}, nil
+	}
+
+	// Konvertovanje u protobuf format
+	pbTours := make([]*pb.Tour, len(tours))
+	for i, tour := range tours {
+		pbTours[i] = convertTourToProto(tour)
+	}
+
+	return &pb.GetToursResponse{
+		Tours:      pbTours,
+		TotalCount: int32(len(tours)),
+		Success:    true,
+		Message:    "Tours fetched successfully",
+	}, nil
+}
+
+// convertTourToProto - helper funkcija
+func convertTourToProto(tour model.Tour) *pb.Tour {
+	return &pb.Tour{
+		Id:          tour.ID.Hex(),
+		Name:        tour.Name,
+		Description: tour.Description,
+		Level:       tour.Level,
+		Tags:        tour.Tags,
+		Status:      string(tour.Status),
+		Price:       tour.Price,
+		Duration:    int32(tour.Duration),
+		MaxPeople:   int32(tour.MaxPeople),
+		KeyPoints:   "", 
+		GuideId:     tour.GuideID.Hex(),
+		CreatedAt:   tour.CreatedAt.Time().Format(time.RFC3339),
+		UpdatedAt:   tour.UpdatedAt.Time().Format(time.RFC3339),
+	}
+}
+
+
+
+
 func CreateKeyPoint(c *gin.Context) {
 	tourID := c.Param("tourId")
+	fmt.Printf("DEBUG: CreateKeyPoint called for tourID: %s\n", tourID)
 
 	// Get image file (optional)
 	image, err := c.FormFile("image")
 	if err != nil && err.Error() != "http: no such file" {
+		fmt.Printf("DEBUG: Error getting form file: %v\n", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Greška pri čitanju slike"})
 		return
+	}
+	
+	if image != nil {
+		fmt.Printf("DEBUG: Received image file: %s, size: %d\n", image.Filename, image.Size)
+	} else {
+		fmt.Printf("DEBUG: No image file received\n")
 	}
 
 	name := c.PostForm("name")
 	description := c.PostForm("description")
 	longitudeStr := c.PostForm("longitude")
 	latitudeStr := c.PostForm("latitude")
+	
+	fmt.Printf("DEBUG: Form data - name: %s, description: %s, longitude: %s, latitude: %s\n", 
+		name, description, longitudeStr, latitudeStr)
 
-	if name == "" || description == "" || longitudeStr == "" || latitudeStr == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Sva polja su obavezna (name, description, longitude, latitude)"})
+	if name == "" || longitudeStr == "" || latitudeStr == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Name, longitude, and latitude are required"})
 		return
 	}
 
@@ -330,4 +403,55 @@ func DeleteReview(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Recenzija je uspešno obrisana"})
+}
+
+// GenerateTokens generates purchase tokens for multiple tours (SAGA endpoint)
+func GenerateTokens(c *gin.Context) {
+	var request model.TokenRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Neispravan format zahteva"})
+		return
+	}
+
+	response, err := service.GenerateTokensForTours(request.UserID, request.TourIDs)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, response)
+}
+
+// GetPurchasedTours returns all tours user has purchased
+func GetPurchasedTours(c *gin.Context) {
+	userID, exists := middleware.GetUserID(c)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Korisnik nije autentifikovan"})
+		return
+	}
+
+	tours, err := service.GetUserPurchasedTours(userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, tours)
+}
+
+// DeleteTokens removes purchase tokens (SAGA rollback endpoint)
+func DeleteTokens(c *gin.Context) {
+	var request model.TokenRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Neispravan format zahteva"})
+		return
+	}
+
+	err := service.DeleteTokensForRollback(request.UserID, request.TourIDs)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Tokeni su uspešno obrisani"})
 }

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { authService, AuthResponse } from '../services/authService';
+import { getTokenClaims, isTokenExpired } from '../utils/jwtDecoder';
 
 interface User {
   email: string;
@@ -10,6 +11,7 @@ interface User {
 interface AuthContextType {
   isAuthenticated: boolean;
   user: User | null;
+  setUser: (user: User | null) => void;
   login: (email: string, password: string) => Promise<void>;
   register: (email: string, password: string, role: string) => Promise<void>;
   logout: () => void;
@@ -34,16 +36,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      verifyToken();
+      verifyToken(token);
     } else {
       setLoading(false);
     }
   }, []);
 
-  const verifyToken = async () => {
+  const verifyToken = (token: string) => {
     try {
-      const userData = await authService.verifyToken();
-      setUserData(userData);
+      if (isTokenExpired(token)) {
+        throw new Error('Token expired');
+      }
+
+      const claims = getTokenClaims(token);
+      if (!claims) {
+        throw new Error('Invalid token');
+      }
+
+      const userData = {
+        email: claims.email,
+        role: claims.role,
+        id: claims.id
+      };
+      setUser(userData);
+      setIsAuthenticated(true);
     } catch (error) {
       localStorage.removeItem('token');
       setIsAuthenticated(false);
@@ -54,9 +70,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const setUserData = (data: AuthResponse) => {
-    const userData = { email: data.user.email, role: data.user.role, id: data.user.id };
     localStorage.setItem('token', data.token);
-    setUser(userData);
+    setUser(data.user);
     setIsAuthenticated(true);
   };
 
@@ -79,6 +94,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const value = {
     isAuthenticated,
     user,
+    setUser,
     login,
     register,
     logout,

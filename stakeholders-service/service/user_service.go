@@ -85,6 +85,47 @@ func BlockUser(adminRole model.UserRole, userID string) error {
 	return nil
 }
 
+func UnblockUser(adminRole model.UserRole, userID string) error {
+	if adminRole != model.Admin {
+		return errors.New("pristup dozvoljen samo administratorima")
+	}
+
+	err := repo.UpdateUserStatus(userID, model.Active)
+	if err != nil {
+		return errors.New("greška prilikom odblokiranje korisnika")
+	}
+
+	return nil
+}
+
+// AddUserBalance adds amount to user's balance
+func AddUserBalance(userID string, amount float64) error {
+	if amount <= 0 {
+		return errors.New("iznos mora biti pozitivan")
+	}
+
+	err := repo.UpdateUserBalance(userID, amount)
+	if err != nil {
+		return errors.New("greška prilikom dodavanja balansa")
+	}
+
+	return nil
+}
+
+// SetUserBalance sets exact balance for user
+func SetUserBalance(userID string, balance float64) error {
+	if balance < 0 {
+		return errors.New("balans ne može biti negativan")
+	}
+
+	err := repo.SetUserBalance(userID, balance)
+	if err != nil {
+		return errors.New("greška prilikom postavljanja balansa")
+	}
+
+	return nil
+}
+
 func GetUserById(userID string) (model.User, error) {
 	user, err := repo.FindUserById(userID)
 	if err != nil {
