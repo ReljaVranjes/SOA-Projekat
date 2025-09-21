@@ -2,14 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toursService, Tour } from '../services/toursService';
 import { useApiHandler } from '../utils/handleApi';
+import { useAuth } from '../contexts/AuthContext';
+import { useCart } from '../contexts/CartContext';
 
 const Tours: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { addToCart, cart } = useCart();
   const [tours, setTours] = useState<Tour[]>([]);
   const [filteredTours, setFilteredTours] = useState<Tour[]>([]);
   const [levelFilter, setLevelFilter] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('');
+  const [addingToCart, setAddingToCart] = useState<string | null>(null);
 
   const { loading, error, handleApi } = useApiHandler();
 
@@ -71,6 +76,23 @@ const Tours: React.FC = () => {
       case 'Hard': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  const handleAddToCart = async (tour: Tour) => {
+    setAddingToCart(tour.id);
+    try {
+      await addToCart(tour.id, tour.name, tour.price);
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || 'Failed to add tour to cart';
+      alert(`Error: ${errorMessage}`);
+    } finally {
+      setAddingToCart(null);
+    }
+  };
+
+  const isTourInCart = (tourId: string) => {
+    const inCart = cart?.items?.some(item => item.tourId === tourId) || false;
+    return inCart;
   };
 
   if (loading) {
@@ -167,14 +189,37 @@ const Tours: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center mb-4">
                   <span className="text-2xl font-bold text-blue-600">${tour.price}</span>
-                  <button 
+                </div>
+
+                <div className="flex gap-2">
+                  <button
                     onClick={() => navigate(`/tour/${tour.id}/details`)}
-                    className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
+                    className="flex-1 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
                   >
                     View Details
                   </button>
+
+                  {user?.role === 'Tourist' && (
+                    <button
+                      onClick={() => handleAddToCart(tour)}
+                      disabled={addingToCart === tour.id || isTourInCart(tour.id)}
+                      className={`flex-1 px-4 py-2 rounded transition-colors ${isTourInCart(tour.id)
+                        ? 'bg-green-100 text-green-800 cursor-not-allowed'
+                        : addingToCart === tour.id
+                          ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                          : 'bg-green-600 text-white hover:bg-green-700'
+                        }`}
+                    >
+                      {addingToCart === tour.id
+                        ? 'Adding...'
+                        : isTourInCart(tour.id)
+                          ? 'In Cart'
+                          : 'Add to Cart'
+                      }
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

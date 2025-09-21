@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -9,6 +10,7 @@ import (
 
 	"stakeholders-service/model"
 	pb "stakeholders-service/proto/block"
+	balancepb "stakeholders-service/proto/balance"
 	"stakeholders-service/service"
 
 	"github.com/gin-gonic/gin"
@@ -23,6 +25,11 @@ type LoginReq struct {
 // implements the gRPC service
 type BlockHandler struct {
 	pb.UnimplementedBlockServiceServer
+}
+
+// implements the Balance gRPC service
+type BalanceHandler struct {
+	balancepb.UnimplementedBalanceServiceServer
 }
 
 func ValidateToken(c *gin.Context) {
@@ -364,14 +371,7 @@ func GetBalance(c *gin.Context) {
 	})
 }
 
-// AddBalance - admin adds balance to any user
 func AddBalance(c *gin.Context) {
-	// Check if user is admin
-	userRole, exists := c.Get("role")
-	if !exists || userRole.(string) != "Admin" {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Pristup dozvoljen samo administratorima"})
-		return
-	}
 
 	targetUserID := c.Param("id")
 	if targetUserID == "" {
@@ -400,14 +400,7 @@ func AddBalance(c *gin.Context) {
 	})
 }
 
-// SetBalance - admin sets exact balance for any user
 func SetBalance(c *gin.Context) {
-	// Check if user is admin
-	userRole, exists := c.Get("role")
-	if !exists || userRole.(string) != "Admin" {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Pristup dozvoljen samo administratorima"})
-		return
-	}
 
 	targetUserID := c.Param("id")
 	if targetUserID == "" {
@@ -459,4 +452,103 @@ func GetUserById(c *gin.Context) {
 		"status":    string(user.Status),
 		"name":      user.FirstName + " " + user.LastName, // Combined name for blog component
 	})
+}
+
+// gRPC Balance Service Methods
+
+func (s *BalanceHandler) GetBalance(ctx context.Context, req *balancepb.GetBalanceRequest) (*balancepb.GetBalanceResponse, error) {
+	log.Printf("🔵 [gRPC] GetBalance called for user_id: %s", req.UserId)
+
+	user, err := service.GetUserById(req.UserId)
+	if err != nil {
+		return &balancepb.GetBalanceResponse{
+			Balance: 0,
+			Success: false,
+			Message: "User not found",
+		}, nil
+	}
+
+	return &balancepb.GetBalanceResponse{
+		Balance: user.Balance,
+		Success: true,
+		Message: "Balance retrieved successfully",
+	}, nil
+}
+
+func (s *BalanceHandler) AddBalance(ctx context.Context, req *balancepb.AddBalanceRequest) (*balancepb.AddBalanceResponse, error) {
+	log.Printf("🔵 [gRPC] AddBalance called for user_id: %s, amount: %f", req.UserId, req.Amount)
+
+	err := service.AddUserBalance(req.UserId, req.Amount)
+	if err != nil {
+		return &balancepb.AddBalanceResponse{
+			NewBalance: 0,
+			Success:    false,
+			Message:    err.Error(),
+		}, nil
+	}
+
+	// Get updated balance
+	user, err := service.GetUserById(req.UserId)
+	if err != nil {
+		return &balancepb.AddBalanceResponse{
+			NewBalance: 0,
+			Success:    false,
+			Message:    "Failed to retrieve updated balance",
+		}, nil
+	}
+
+	return &balancepb.AddBalanceResponse{
+		NewBalance: user.Balance,
+		Success:    true,
+		Message:    "Balance updated successfully",
+	}, nil
+}
+
+func (s *BalanceHandler) DeductBalance(ctx context.Context, req *balancepb.DeductBalanceRequest) (*balancepb.DeductBalanceResponse, error) {
+	log.Printf("🔵 [gRPC] DeductBalance called for user_id: %s, amount: %f", req.UserId, req.Amount)
+
+	// First, get current balance to validate
+	user, err := service.GetUserById(req.UserId)
+	if err != nil {
+		return &balancepb.DeductBalanceResponse{
+			NewBalance: 0,
+			Success:    false,
+			Message:    "User not found",
+		}, nil
+	}
+
+	// Check if user has sufficient balance
+	if user.Balance < req.Amount {
+		return &balancepb.DeductBalanceResponse{
+			NewBalance: user.Balance,
+			Success:    false,
+			Message:    fmt.Sprintf("Insufficient balance. Current: %.2f, Required: %.2f", user.Balance, req.Amount),
+		}, nil
+	}
+
+	// Deduct balance (add negative amount)
+	err = service.AddUserBalance(req.UserId, -req.Amount)
+	if err != nil {
+		return &balancepb.DeductBalanceResponse{
+			NewBalance: user.Balance,
+			Success:    false,
+			Message:    err.Error(),
+		}, nil
+	}
+
+	// Get updated balance
+	updatedUser, err := service.GetUserById(req.UserId)
+	if err != nil {
+		return &balancepb.DeductBalanceResponse{
+			NewBalance: user.Balance - req.Amount, // Estimate
+			Success:    true,
+			Message:    "Balance deducted successfully (couldn't verify final balance)",
+		}, nil
+	}
+
+	return &balancepb.DeductBalanceResponse{
+		NewBalance: updatedUser.Balance,
+		Success:    true,
+		Message:    "Balance deducted successfully",
+	}, nil
 }

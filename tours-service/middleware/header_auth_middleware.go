@@ -3,6 +3,7 @@ package middleware
 import (
 	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -75,5 +76,35 @@ func GetUserID(c *gin.Context) (string, bool) {
 		// Try to convert to string as fallback
 		userIDStr := fmt.Sprintf("%v", userID)
 		return userIDStr, true
+	}
+}
+
+// InternalServiceAuthMiddleware for service-to-service communication
+func InternalServiceAuthMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// Check for internal service key header
+		internalKey := c.GetHeader("X-Internal-Service-Key")
+		expectedKey := os.Getenv("INTERNAL_SERVICE_KEY")
+
+		if expectedKey == "" {
+			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{
+				"error": "Internal service key not configured",
+			})
+			return
+		}
+
+		if internalKey != expectedKey {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
+				"error": "Invalid internal service key",
+			})
+			return
+		}
+
+		// For internal calls, set a system user context
+		c.Set("user_id", "system")
+		c.Set("email", "system@internal")
+		c.Set("role", "system")
+
+		c.Next()
 	}
 }

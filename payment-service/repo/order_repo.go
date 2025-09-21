@@ -2,6 +2,7 @@ package repo
 
 import (
 	"context"
+	"fmt"
 	"payment-service/config"
 	"payment-service/model"
 	"time"
@@ -23,6 +24,7 @@ func CreateOrder(order model.Order) (model.Order, error) {
 	if err != nil {
 		return model.Order{}, err
 	}
+	fmt.Printf("Narudzbina kreirana")
 
 	order.ID = result.InsertedID.(primitive.ObjectID)
 	return order, nil

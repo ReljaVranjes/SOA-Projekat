@@ -163,6 +163,7 @@ services:
       - mongodb
     environment:
       - MONGO_URI=mongodb://admin:password@mongodb:27017
+      - INTERNAL_SERVICE_KEY=soa-internal-service-secret-2024
 
   payment-service:
     build: ./payment-service
@@ -171,8 +172,13 @@ services:
       - "6000:6000"
     depends_on:
       - mongodb
+      - stakeholders-service
+      - tours-service
     environment:
       - MONGO_URI=mongodb://admin:password@mongodb:27017
+      - STAKEHOLDERS_SERVICE_URL=http://stakeholders-service:4000
+      - TOURS_SERVICE_URL=http://tours-service:5000
+      - INTERNAL_SERVICE_KEY=soa-internal-service-secret-2024
       - JWT_SECRET=mojSuperTajniJWT123
 
   followers-service:

@@ -36,9 +36,9 @@ export const authService = {
   register: async (data: RegisterRequest): Promise<AuthResponse> => {
     const response = await api.post(`${prefix}/register`, data);
     return response.data;
-    },
+  },
 
-    verifyToken: async (): Promise<AuthResponse> => {
+  verifyToken: async (): Promise<AuthResponse> => {
     // Use profile endpoint to verify token and get user data
     const user = await authService.getProfile();
     // Return a mock AuthResponse since we only have user data
@@ -60,6 +60,11 @@ export const authService = {
 
   getUserById: async (userId: string): Promise<User> => {
     const response = await api.get(`${prefix}/users/${userId}`);
+    return response.data;
+  },
+
+  getBalance: async (): Promise<{ balance: number }> => {
+    const response = await api.get(`${prefix}/balance`);
     return response.data;
   },
 };
