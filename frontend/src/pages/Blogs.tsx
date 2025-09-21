@@ -17,6 +17,7 @@ const Blogs: React.FC = () => {
   const [isReadDialogOpen, setIsReadDialogOpen] = useState(false);
   const [selectedBlog, setSelectedBlog] = useState<BlogWithAuthor | null>(null);
   const [formData, setFormData] = useState({ title: '', description: '' });
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const { loading, error, handleApi } = useApiHandler();
 
   useEffect(() => {
@@ -52,6 +53,9 @@ const Blogs: React.FC = () => {
 
       setBlogs(blogsWithAuthors);
     }
+    
+    // Set initial loading to false after first load
+    setIsInitialLoading(false);
   };
 
   const handleReadBlog = (blog: BlogWithAuthor) => {
@@ -92,6 +96,45 @@ const Blogs: React.FC = () => {
     }));
   };
 
+  const handleLikeBlog = async (blogId: string, event?: React.MouseEvent) => {
+    // Prevent default behavior and event bubbling
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+
+    if (!isAuthenticated) {
+      return;
+    }
+
+    try {
+      const result = await handleApi(
+        () => blogService.likeBlog(blogId),
+        {
+          errorMessage: 'Failed to like blog'
+        }
+      );
+
+      if (result) {
+        // Update the blogs state with the new like data
+        setBlogs(prevBlogs => 
+          prevBlogs.map(blog => 
+            blog._id === blogId 
+              ? { ...blog, likes: result.likes }
+              : blog
+          )
+        );
+
+        // Update selected blog if it's currently open
+        if (selectedBlog && selectedBlog._id === blogId) {
+          setSelectedBlog({ ...selectedBlog, likes: result.likes });
+        }
+      }
+    } catch (error) {
+      console.error('Error liking blog:', error);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -105,7 +148,7 @@ const Blogs: React.FC = () => {
     return description.slice(0, maxLength) + '...';
   };
 
-  if (loading) {
+  if (isInitialLoading) {
     return (
       <div className="flex items-center justify-center min-h-64">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
@@ -143,7 +186,7 @@ const Blogs: React.FC = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {blogs.map((blog) => (
-            <div key={blog.id} className="bg-white rounded-lg shadow-md overflow-hidden">
+            <div key={blog._id} className="bg-white rounded-lg shadow-md overflow-hidden">
               <div className="h-48 bg-gradient-to-r from-purple-500 to-pink-600"></div>
 
               <div className="p-6">
@@ -159,12 +202,33 @@ const Blogs: React.FC = () => {
                 <p className="text-gray-600 mb-4">{truncateDescription(blog.description)}</p>
 
                 <div className="flex justify-between items-center">
-                  <div className="flex items-center text-sm text-gray-500">
-                    <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
+                  <button
+                    type="button"
+                    onClick={(e) => handleLikeBlog(blog._id, e)}
+                    disabled={!isAuthenticated}
+                    className={`flex items-center text-sm transition-colors ${
+                      isAuthenticated 
+                        ? 'text-red-500 hover:text-red-600 cursor-pointer' 
+                        : 'text-gray-400 cursor-not-allowed'
+                    }`}
+                  >
+                    <svg 
+                      className={`w-4 h-4 mr-1 ${
+                        user?.id && blog.likes?.includes(user.id) 
+                          ? 'fill-current' 
+                          : 'fill-none stroke-current'
+                      }`} 
+                      viewBox="0 0 20 20"
+                      strokeWidth="2"
+                    >
+                      <path 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round" 
+                        d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" 
+                      />
                     </svg>
                     <span>{blog.likes?.length || 0} likes</span>
-                  </div>
+                  </button>
                   <button 
                     onClick={() => handleReadBlog(blog)}
                     className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
@@ -195,17 +259,39 @@ const Blogs: React.FC = () => {
               </button>
             </div>
 
-            <div className="flex items-center text-sm text-gray-500 mb-6">
-              <span>By {selectedBlog.authorName}</span>
-              <span className="mx-2">•</span>
-              <span>{formatDate(selectedBlog.createdAt)}</span>
-              <span className="mx-2">•</span>
-              <div className="flex items-center">
-                <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd" />
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center text-sm text-gray-500">
+                <span>By {selectedBlog.authorName}</span>
+                <span className="mx-2">•</span>
+                <span>{formatDate(selectedBlog.createdAt)}</span>
+              </div>
+              <button
+                type="button"
+                onClick={(e) => handleLikeBlog(selectedBlog._id, e)}
+                disabled={!isAuthenticated}
+                className={`flex items-center text-sm transition-colors ${
+                  isAuthenticated 
+                    ? 'text-red-500 hover:text-red-600 cursor-pointer' 
+                    : 'text-gray-400 cursor-not-allowed'
+                }`}
+              >
+                <svg 
+                  className={`w-5 h-5 mr-1 ${
+                    user?.id && selectedBlog.likes?.includes(user.id) 
+                      ? 'fill-current' 
+                      : 'fill-none stroke-current'
+                  }`} 
+                  viewBox="0 0 20 20"
+                  strokeWidth="2"
+                >
+                  <path 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                    d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" 
+                  />
                 </svg>
                 <span>{selectedBlog.likes?.length || 0} likes</span>
-              </div>
+              </button>
             </div>
 
             <div className="prose max-w-none">
