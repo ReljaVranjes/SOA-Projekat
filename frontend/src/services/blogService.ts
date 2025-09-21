@@ -1,7 +1,7 @@
 import api from '../api';
 
 export interface Blog {
-  id: string;
+  _id: string;
   authorId: string;
   title: string;
   description: string;
