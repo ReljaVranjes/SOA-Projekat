@@ -2,9 +2,8 @@ const axios = require("axios");
 
 class StakeholdersService {
   constructor() {
-    this.stakeholdersUrl =
-      process.env.STAKEHOLDERS_SERVICE_URL ||
-      "http://stakeholders-service:4000";
+    this.gatewayUrl =
+      process.env.GATEWAY_URL || "http://gateway:8088";
   }
 
   async getUserById(userId, authToken = null) {
@@ -19,7 +18,7 @@ class StakeholdersService {
       }
 
       const response = await axios.get(
-        `${this.stakeholdersUrl}/users/${userId}`,
+        `${this.gatewayUrl}/api/stakeholders-service/users/${userId}`,
         { headers }
       );
       const user = response.data;
@@ -68,7 +67,7 @@ class StakeholdersService {
 
   async getAllUsers() {
     try {
-      const response = await axios.get(`${this.stakeholdersUrl}/users`);
+      const response = await axios.get(`${this.gatewayUrl}/api/stakeholders-service/users`);
       return response.data.users.map((user) => ({
         id: user.id,
         username: user.username || user.email,

@@ -7,19 +7,28 @@ const createBlog = async (data) => {
 };
 
 const getAllBlogs = async (userId = null, authToken = null) => {
-  if (!userId || !authToken) {
-    // If no user authentication, return empty array (no blogs visible)
-    console.log('No authentication provided, returning empty blog list');
+  console.log('getAllBlogs called with:', { userId, hasAuthToken: !!authToken });
+  
+  if (!userId) {
+    // If no user ID, return empty array (no blogs visible)
+    console.log('No user ID provided, returning empty blog list');
     return [];
   }
 
   try {
-    // Get list of users that the current user is following
-    const followedUserIds = await followersClient.getFollowedUserIds(userId, authToken);
-    console.log(`User ${userId} is following users:`, followedUserIds);
+    let allowedAuthorIds = [userId]; // Always include user's own blogs
     
-    // Also include the user's own blogs
-    const allowedAuthorIds = [...followedUserIds, userId];
+    if (authToken) {
+      // Try to get list of users that the current user is following
+      const followedUserIds = await followersClient.getFollowedUserIds(userId, authToken);
+      console.log(`User ${userId} is following users:`, followedUserIds);
+      
+      // Add followed users to allowed authors
+      allowedAuthorIds = [...followedUserIds, userId];
+    } else {
+      console.log('No auth token provided, showing only user\'s own blogs');
+    }
+    
     console.log(`Filtering blogs for authors:`, allowedAuthorIds);
     
     // Filter blogs to only show those from followed users (and own blogs)
@@ -27,12 +36,15 @@ const getAllBlogs = async (userId = null, authToken = null) => {
       authorId: { $in: allowedAuthorIds } 
     }).sort({ createdAt: -1 });
     
-    console.log(`Found ${blogs.length} blogs from followed users`);
+    console.log(`Found ${blogs.length} blogs from allowed authors`);
     return blogs;
   } catch (error) {
     console.error('Error filtering blogs by followed users:', error);
-    // If followers service is unavailable, return empty array for safety
-    return [];
+    // If followers service is unavailable, at least show user's own blogs
+    console.log('Falling back to showing only user\'s own blogs');
+    const blogs = await Blog.find({ authorId: userId }).sort({ createdAt: -1 });
+    console.log(`Found ${blogs.length} of user's own blogs`);
+    return blogs;
   }
 };
 

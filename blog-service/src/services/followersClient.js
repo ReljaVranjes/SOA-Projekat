@@ -2,7 +2,7 @@ const axios = require('axios');
 
 class FollowersClient {
   constructor() {
-    this.followersUrl = process.env.FOLLOWERS_SERVICE_URL || 'http://followers-service:6000';
+    this.followersUrl = process.env.FOLLOWERS_SERVICE_URL || 'http://followers-service:7000';
   }
 
   async getFollowedUserIds(userId, authToken) {
