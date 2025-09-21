@@ -1,19 +1,25 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
-import Layout from './components/Layout';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Dashboard from './pages/Dashboard';
-import Tours from './pages/Tours';
-import TourDetails from './pages/TourDetails';
-import MyTours from './pages/MyTours';
-import EditTour from './pages/EditTour';
-import Profile from './pages/Profile';
-import Admin from './pages/Admin';
-import Blogs from './pages/Blogs';
-import ProtectedRoute from './components/ProtectedRoute';
-import { ROUTES } from './constants/routes';
+import React from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+import { AuthProvider } from "./contexts/AuthContext";
+import Layout from "./components/Layout";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import Dashboard from "./pages/Dashboard";
+import Tours from "./pages/Tours";
+import TourDetails from "./pages/TourDetails";
+import MyTours from "./pages/MyTours";
+import EditTour from "./pages/EditTour";
+import FollowUsers from "./pages/FollowUsers";
+import Profile from "./pages/Profile";
+import Admin from "./pages/Admin";
+import Blogs from "./pages/Blogs";
+import ProtectedRoute from "./components/ProtectedRoute";
+import { ROUTES } from "./constants/routes";
 
 function App() {
   return (
@@ -61,6 +67,14 @@ function App() {
               element={
                 <ProtectedRoute requireRoles={["Guide"]}>
                   <EditTour />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.FOLLOW_USERS}
+              element={
+                <ProtectedRoute>
+                  <FollowUsers />
                 </ProtectedRoute>
               }
             />

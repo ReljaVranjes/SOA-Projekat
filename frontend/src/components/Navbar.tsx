@@ -42,6 +42,12 @@ const Navbar: React.FC<NavbarProps> = ({ isAuthenticated, user, onLogout }) => {
                 >
                   Tours
                 </Link>
+                <Link
+                  to={ROUTES.FOLLOW_USERS}
+                  className="text-white hover:text-blue-200 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  Follow Users
+                </Link>
                 {user?.role === 'Guide' && (
                   <Link
                     to={ROUTES.MY_TOURS}

@@ -95,20 +95,26 @@ func UpdateUserProfile(email string, updates bson.M) error {
 	return err
 }
 
-func FindUserByID(userID string) (model.User, error) {
+func FindUserById(userID string) (model.User, error) {
+	collection := config.MongoDB.Collection(getUserCollection())
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Konvertuj string ID u ObjectID
 	objectID, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
 		return model.User{}, err
 	}
 
-	collection := config.MongoDB.Collection("users")
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	var user model.User
 	filter := bson.M{"_id": objectID}
+	var user model.User
+
 	err = collection.FindOne(ctx, filter).Decode(&user)
-	return user, err
+	if err != nil {
+		return model.User{}, err
+	}
+
+	return user, nil
 }
 
 func UpdateUserBalance(userID string, amount float64) error {
