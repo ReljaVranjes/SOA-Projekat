@@ -11,6 +11,7 @@ import MyTours from './pages/MyTours';
 import EditTour from './pages/EditTour';
 import Profile from './pages/Profile';
 import Admin from './pages/Admin';
+import Blogs from './pages/Blogs';
 import ProtectedRoute from './components/ProtectedRoute';
 import { ROUTES } from './constants/routes';
 
@@ -76,6 +77,14 @@ function App() {
               element={
                 <ProtectedRoute requireRoles={["Admin"]}>
                   <Admin />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.BLOGS}
+              element={
+                <ProtectedRoute>
+                  <Blogs />
                 </ProtectedRoute>
               }
             />

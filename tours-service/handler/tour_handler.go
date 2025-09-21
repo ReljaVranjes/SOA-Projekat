@@ -1,17 +1,26 @@
 package handler
 
 import (
+	"context"
 	"fmt"
+	"log"
 	"mime/multipart"
 	"net/http"
 	"strconv"
+	"time"
 	"tours-service/middleware"
 	"tours-service/model"
+	pb "tours-service/proto/tours"
 	"tours-service/service"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
+
+
+type ToursHandler struct {
+	pb.UnimplementedToursServiceServer // gRPC interface
+}
 
 func CreateTour(c *gin.Context) {
 	guideID, exists := middleware.GetUserID(c)
@@ -99,6 +108,58 @@ func GetAllTours(c *gin.Context) {
 
 	c.JSON(http.StatusOK, tours)
 }
+
+// GetTours - gRPC metoda (nova)
+func (h *ToursHandler) GetTours(ctx context.Context, req *pb.GetToursRequest) (*pb.GetToursResponse, error) {
+	log.Println("gRPC GetTours called")
+
+	// Pozivanje ISTE business logike kao HTTP endpoint
+	tours, err := service.GetAllTours()
+	if err != nil {
+		log.Printf("Error fetching tours: %v", err)
+		return &pb.GetToursResponse{
+			Tours:      nil,
+			TotalCount: 0,
+			Success:    false,
+			Message:    "Error fetching tours: " + err.Error(),
+		}, nil
+	}
+
+	// Konvertovanje u protobuf format
+	pbTours := make([]*pb.Tour, len(tours))
+	for i, tour := range tours {
+		pbTours[i] = convertTourToProto(tour)
+	}
+
+	return &pb.GetToursResponse{
+		Tours:      pbTours,
+		TotalCount: int32(len(tours)),
+		Success:    true,
+		Message:    "Tours fetched successfully",
+	}, nil
+}
+
+// convertTourToProto - helper funkcija
+func convertTourToProto(tour model.Tour) *pb.Tour {
+	return &pb.Tour{
+		Id:          tour.ID.Hex(),
+		Name:        tour.Name,
+		Description: tour.Description,
+		Level:       tour.Level,
+		Tags:        tour.Tags,
+		Status:      string(tour.Status),
+		Price:       tour.Price,
+		Duration:    int32(tour.Duration),
+		MaxPeople:   int32(tour.MaxPeople),
+		KeyPoints:   "", 
+		GuideId:     tour.GuideID.Hex(),
+		CreatedAt:   tour.CreatedAt.Time().Format(time.RFC3339),
+		UpdatedAt:   tour.UpdatedAt.Time().Format(time.RFC3339),
+	}
+}
+
+
+
 
 func CreateKeyPoint(c *gin.Context) {
 	tourID := c.Param("tourId")

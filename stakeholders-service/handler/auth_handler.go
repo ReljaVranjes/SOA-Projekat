@@ -433,5 +433,29 @@ func SetBalance(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Balans je uspešno postavljen",
 		"balance": request.Balance,
+  })
+
+func GetUserById(c *gin.Context) {
+	userID := c.Param("id")
+	if userID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID korisnika je obavezan"})
+		return
+	}
+
+	user, err := service.GetUserById(userID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Return user data without sensitive information
+	c.JSON(http.StatusOK, gin.H{
+		"id":        user.ID.Hex(),
+		"email":     user.Email,
+		"firstName": user.FirstName,
+		"lastName":  user.LastName,
+		"role":      string(user.Role),
+		"status":    string(user.Status),
+		"name":      user.FirstName + " " + user.LastName, // Combined name for blog component
 	})
 }

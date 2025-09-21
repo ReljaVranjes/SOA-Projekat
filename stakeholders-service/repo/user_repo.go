@@ -95,7 +95,6 @@ func UpdateUserProfile(email string, updates bson.M) error {
 	return err
 }
 
-// FindUserByID finds user by ID
 func FindUserByID(userID string) (model.User, error) {
 	objectID, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
@@ -112,7 +111,6 @@ func FindUserByID(userID string) (model.User, error) {
 	return user, err
 }
 
-// UpdateUserBalance adds amount to user's current balance
 func UpdateUserBalance(userID string, amount float64) error {
 	objectID, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
@@ -130,7 +128,6 @@ func UpdateUserBalance(userID string, amount float64) error {
 	return err
 }
 
-// SetUserBalance sets exact balance for user
 func SetUserBalance(userID string, balance float64) error {
 	objectID, err := primitive.ObjectIDFromHex(userID)
 	if err != nil {
@@ -146,4 +143,5 @@ func SetUserBalance(userID string, balance float64) error {
 
 	_, err = collection.UpdateOne(ctx, filter, update)
 	return err
+	}
 }
