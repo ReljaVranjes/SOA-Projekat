@@ -6,8 +6,8 @@ const authMiddleware = require('../middleware/authMiddleware');
 const checkRole = require('../middleware/checkRole');
 
 router.post('/', authMiddleware, checkRole(['Tourist', 'Guide']), validateBlog, blogController.createBlog);
-router.get('/', blogController.getAllBlogs);
-router.get('/:id', blogController.getBlogById);
+router.get('/', authMiddleware, checkRole(['Tourist', 'Guide']), blogController.getAllBlogs);
+router.get('/:id', authMiddleware, checkRole(['Tourist', 'Guide']), blogController.getBlogById);
 router.post('/:id/like', authMiddleware, checkRole(['Tourist', 'Guide']), blogController.likeBlog);
 
 module.exports = router;

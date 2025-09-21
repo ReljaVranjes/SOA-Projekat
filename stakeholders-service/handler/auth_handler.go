@@ -74,6 +74,22 @@ func GetAllUsers(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"users": users})
 }
 
+func GetUserById(c *gin.Context) {
+	userID := c.Param("id")
+	if userID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID korisnika je obavezan"})
+		return
+	}
+
+	user, err := service.GetUserById(userID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, user)
+}
+
 func BlockUser(c *gin.Context) {
 	roleStr, exists := c.Get("role")
 	if !exists {

@@ -122,11 +122,24 @@ const Dashboard: React.FC = () => {
         )}
 
         <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
-          <h3 className="text-lg font-semibold mb-2 text-purple-600">Profile</h3>
+          <h3 className="text-lg font-semibold mb-2 text-purple-600">Follow Users</h3>
+          <p className="text-gray-600 mb-4">
+            Connect with other users and discover content
+          </p>
+          <Link
+            to={ROUTES.FOLLOW_USERS}
+            className="inline-block bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 transition-colors"
+          >
+            Follow Users
+          </Link>
+        </div>
+
+        <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+          <h3 className="text-lg font-semibold mb-2 text-indigo-600">Profile</h3>
           <p className="text-gray-600 mb-4">
             Update your profile and preferences
           </p>
-          <button className="inline-block bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 transition-colors">
+          <button className="inline-block bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 transition-colors">
             Edit Profile
           </button>
         </div>
