@@ -4,8 +4,8 @@ import (
 	"stakeholders-service/handler"
 	"stakeholders-service/middleware"
 
-	"github.com/gin-gonic/gin"
 	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
 )
 
 func SetupRouter() *gin.Engine {
@@ -21,11 +21,13 @@ func SetupRouter() *gin.Engine {
 
 	r.POST("/register", handler.Register)
 	r.POST("/login", handler.Login)
+	r.POST("/validate-token", handler.ValidateToken)
 
 	auth := r.Group("/")
-	auth.Use(middleware.AuthMiddleware())
+	auth.Use(middleware.HeaderAuthMiddleware())
 	auth.GET("/me", handler.Me)
 	auth.GET("/users", handler.GetAllUsers)
+	auth.GET("/users/:id", handler.GetUserById)
 	auth.PUT("/users/:id/block", handler.BlockUser)
 	auth.PUT("/users/:id/unblock", handler.UnblockUser)
 	auth.GET("/profile", handler.GetProfile)

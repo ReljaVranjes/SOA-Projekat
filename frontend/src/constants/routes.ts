@@ -9,6 +9,7 @@ export const ROUTES = {
   EDIT_TOUR: '/tour/:tourId',
   PROFILE: '/profile',
   ADMIN: '/admin',
+  BLOGS: '/blogs',
 } as const;
 
 export type RouteKey = keyof typeof ROUTES;

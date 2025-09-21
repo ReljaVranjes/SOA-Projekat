@@ -8,7 +8,9 @@ const PORT = process.env.PORT || 8088;
 // Middleware
 app.use(cors({
   origin: process.env.FRONTEND_URL || 'http://localhost:3001',
-  credentials: true
+  credentials: true,
+  methods: ['GET','POST','PUT','DELETE','OPTIONS'],
+  allowedHeaders: ['Origin','Content-Type','Authorization'],
 }));
 
 
@@ -72,5 +74,6 @@ app.listen(PORT, () => {
   console.log('📡 Services:');
   console.log(`   Blog: ${process.env.BLOG_SERVICE_URL || 'http://localhost:3000'}`);
   console.log(`   Stakeholders: ${process.env.STAKEHOLDERS_SERVICE_URL || 'http://localhost:4000'}`);
+  console.log(`   Stakeholders gRPC: ${process.env.STAKEHOLDERS_GRPC_URL || 'http://localhost:4001'}`);
   console.log(`   Tours: ${process.env.TOURS_SERVICE_URL || 'http://localhost:5000'}`);
 });

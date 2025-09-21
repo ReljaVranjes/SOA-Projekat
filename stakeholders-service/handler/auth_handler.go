@@ -1,12 +1,101 @@
 package handler
 
 import (
+	"context"
+	"log"
 	"net/http"
+	"os"
+	"strings"
 
-	"github.com/gin-gonic/gin"
 	"stakeholders-service/model"
 	"stakeholders-service/service"
+	pb "stakeholders-service/proto/block"
+
+	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 )
+
+type LoginReq struct {
+    Email    string `json:"email"    form:"email"    binding:"required,email"`
+    Password string `json:"password" form:"password" binding:"required"`
+}
+
+//  implements the gRPC service
+type BlockHandler struct {
+	pb.UnimplementedBlockServiceServer
+}
+
+func ValidateToken(c *gin.Context) {
+	authHeader := c.GetHeader("Authorization")
+	
+	if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
+		c.JSON(http.StatusUnauthorized, gin.H{
+			"error": "Authorization token missing or malformed",
+		})
+		return
+	}
+
+	tokenString := strings.TrimPrefix(authHeader, "Bearer ")
+
+	// Parse and verify JWT token
+	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+		// Validate signing method
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, jwt.ErrSignatureInvalid
+		}
+		return []byte(os.Getenv("JWT_SECRET")), nil
+	})
+
+	if err != nil {
+		if err == jwt.ErrTokenExpired {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Token expired"})
+			return
+		}
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+		return
+	}
+
+	if !token.Valid {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+		return
+	}
+
+	// Extract claims
+	claims, ok := token.Claims.(jwt.MapClaims)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims"})
+		return
+	}
+
+	// Get email from token (following your existing pattern)
+	email, ok := claims["email"].(string)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid email in token"})
+		return
+	}
+
+	// Get user using the service layer (like other handlers)
+	user, err := service.GetUserProfile(email)
+	if err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+		return
+	}
+
+	// Check user status (following your existing pattern)
+	if user.Status == model.Blocked {
+		c.JSON(http.StatusForbidden, gin.H{"error": "User account is blocked"})
+		return
+	}
+
+	// Return user data (without sensitive info)
+	c.JSON(http.StatusOK, gin.H{
+		"user": gin.H{
+			"id":    user.ID.Hex(),
+			"email": user.Email,
+			"role":  string(user.Role),		
+		},
+	})
+}
 
 func Register(c *gin.Context) {
 	var input model.User
@@ -28,13 +117,18 @@ func Register(c *gin.Context) {
 }
 
 func Login(c *gin.Context) {
-	var input model.User
+	var input LoginReq
 
-	// Parsiranje emaila i lozinke iz zahteva
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Neispravan JSON"})
-		return
-	}
+    // Prihvata JSON ili form na osnovu Content-Type (ako želiš striktno JSON, koristi ShouldBindJSON)
+    if err := c.ShouldBind(&input); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{
+            "error":   "Neispravan unos",
+            "details": err.Error(),
+        })
+        return
+    }
+    
+    log.Printf("Parsed login data - Email: %s, Password: [hidden]", input.Email)
 
 	// Servis obrada
 	res, err := service.LoginUser(input.Email, input.Password)
@@ -46,14 +140,15 @@ func Login(c *gin.Context) {
 	c.JSON(http.StatusOK, res)
 }
 
-
 func Me(c *gin.Context) {
+	user_id, _ := c.Get("user_id")
 	email, _ := c.Get("email")
 	role, _ := c.Get("role")
 
 	c.JSON(http.StatusOK, gin.H{
-		"email": email,
-		"role":  role,
+		"user_id": user_id,
+		"email":   email,
+		"role":    role,
 	})
 }
 
@@ -75,6 +170,8 @@ func GetAllUsers(c *gin.Context) {
 }
 
 func BlockUser(c *gin.Context) {
+	log.Printf("🟢 [HTTP] BlockUser called with user_id: %s", c.Param("id"))
+	log.Printf("🟢 [HTTP] Request headers: %v", c.Request.Header)
 	roleStr, exists := c.Get("role")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Neautorizovan pristup"})
@@ -95,6 +192,37 @@ func BlockUser(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Korisnik je uspešno blokiran"})
+}
+
+// BlockUser handles gRPC BlockUser calls
+func (s *BlockHandler) BlockUser(ctx context.Context, req *pb.BlockUserRequest) (*pb.BlockUserResponse, error) {
+	log.Printf("🔵 [gRPC] BlockUser called with role: %v, user_id: %s", req.Role, req.UserId)
+	// Convert proto role to model role
+	var role model.UserRole
+	switch req.Role {
+	case pb.UserRole_USER_ROLE_USER:
+		role = model.Tourist
+	case pb.UserRole_USER_ROLE_ADMIN:
+		role = model.Admin
+	case pb.UserRole_USER_ROLE_GUIDE:
+		role = model.Guide
+	default:
+		return &pb.BlockUserResponse{
+			Message: "Invalid role",
+		}, nil
+	}
+
+	// Call your existing service
+	err := service.BlockUser(role, req.UserId)
+	if err != nil {
+		return &pb.BlockUserResponse{
+			Message: "Failed to block user: " + err.Error(),
+		}, nil
+	}
+
+	return &pb.BlockUserResponse{
+		Message: "User blocked successfully",
+	}, nil
 }
 
 func UnblockUser(c *gin.Context) {
@@ -217,3 +345,28 @@ func UpdateLocation(c *gin.Context) {
 	})
 }
 
+
+func GetUserById(c *gin.Context) {
+	userID := c.Param("id")
+	if userID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "ID korisnika je obavezan"})
+		return
+	}
+
+	user, err := service.GetUserById(userID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Return user data without sensitive information
+	c.JSON(http.StatusOK, gin.H{
+		"id":        user.ID.Hex(),
+		"email":     user.Email,
+		"firstName": user.FirstName,
+		"lastName":  user.LastName,
+		"role":      string(user.Role),
+		"status":    string(user.Status),
+		"name":      user.FirstName + " " + user.LastName, // Combined name for blog component
+	})
+}

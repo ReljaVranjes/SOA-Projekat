@@ -5,16 +5,26 @@
   "main": "index.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "generate-proto": "node generate-proto.js",
+    "generate-proto-ts": "node generate-proto.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@grpc/grpc-js": "^1.14.0",
+    "@grpc/proto-loader": "^0.8.0",
+    "axios": "^1.12.2",
     "cors": "^2.8.5",
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
+    "google-protobuf": "^4.0.0",
     "morgan": "^1.10.1",
     "nodemon": "^3.1.10"
+  },
+  "devDependencies": {
+    "grpc-tools": "^1.12.4",
+    "protoc-gen-ts": "^0.8.7"
   }
 }

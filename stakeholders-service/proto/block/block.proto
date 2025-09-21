@@ -1,0 +1,27 @@
+
+syntax = "proto3";
+
+package block;
+
+option go_package = "stakeholders-service/proto/block";
+
+service BlockService {
+  rpc BlockUser(BlockUserRequest) returns (BlockUserResponse) {}
+}
+
+enum UserRole {
+  USER_ROLE_UNSPECIFIED = 0;
+  USER_ROLE_USER = 1;
+  USER_ROLE_ADMIN = 2;
+  USER_ROLE_GUIDE = 3;
+}
+
+message BlockUserRequest {
+  UserRole role = 1;
+  string user_id = 2;
+}
+
+// Block user response
+message BlockUserResponse {
+  string message = 1;
+}

@@ -57,4 +57,9 @@ export const authService = {
     const response = await api.put(`${prefix}/profile`, data);
     return response.data;
   },
+
+  getUserById: async (userId: string): Promise<User> => {
+    const response = await api.get(`${prefix}/users/${userId}`);
+    return response.data;
+  },
 };

@@ -1,0 +1,51 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  # - "first_rules.yml"
+  # - "second_rules.yml"
+
+scrape_configs:
+  # Prometheus itself
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Node Exporter for host machine metrics (CPU, RAM, filesystem, network)
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+    scrape_interval: 5s
+    metrics_path: /metrics
+
+  # docker-stats exporter for container metrics (CPU, RAM, filesystem, network)
+  - job_name: 'docker-stats'
+    static_configs:
+      - targets: ['docker-stats-exporter:9487']
+
+  # Optional: Application metrics endpoints
+  # Uncomment and configure these if your services expose /metrics endpoints
+  # - job_name: 'gateway'
+  #   static_configs:
+  #     - targets: ['gateway:8088']
+  #   metrics_path: /metrics
+  #   scrape_interval: 15s
+
+  # - job_name: 'blog-service'
+  #   static_configs:
+  #     - targets: ['blog-service:3000']
+  #   metrics_path: /metrics
+  #   scrape_interval: 15s
+
+  # - job_name: 'stakeholders-service'
+  #   static_configs:
+  #     - targets: ['stakeholders-service:4000']
+  #   metrics_path: /metrics
+  #   scrape_interval: 15s
+
+  # - job_name: 'tours-service'
+  #   static_configs:
+  #     - targets: ['tours-service:5000']
+  #   metrics_path: /metrics
+  #   scrape_interval: 15s
