@@ -30,10 +30,10 @@ func SetupRouter() *gin.Engine {
 		auth.PUT("/cart/items/:tourId", handler.UpdateCartItem)          // Update cart item
 		auth.DELETE("/cart", handler.ClearCart)                          // Clear entire cart
 		
-		// Checkout and orders (will be implemented later)
-		// auth.POST("/checkout", handler.Checkout)
-		// auth.GET("/orders", handler.GetUserOrders)
-		// auth.GET("/orders/:orderId", handler.GetOrderByID)
+		// Checkout and orders
+		auth.POST("/checkout", handler.Checkout)                         // Process checkout (SAGA)
+		auth.GET("/orders", handler.GetUserOrders)                       // Get user's orders
+		auth.GET("/orders/:orderId", handler.GetOrderByID)               // Get specific order
 	}
 
 	return r

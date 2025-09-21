@@ -24,6 +24,7 @@ app.use((req, res, next) => {
 const blogRoutes = require('./src/routes/blogRoutes');
 const stakeholdersRoutes = require('./src/routes/stakeholdersRoutes');
 const toursRoutes = require('./src/routes/toursRoutes');
+const paymentRoutes = require('./src/routes/paymentRoutes');
 
 // Health check
 app.get('/health', (req, res) => {
@@ -39,7 +40,7 @@ app.get('/info', (req, res) => {
   res.json({
     name: 'API Gateway',
     version: '1.0.0',
-    services: ['blog', 'stakeholders', 'tours'],
+    services: ['blog', 'stakeholders', 'tours', 'payment'],
     environment: process.env.NODE_ENV || 'development'
   });
 });
@@ -48,6 +49,7 @@ app.get('/info', (req, res) => {
 app.use('/api/blog-service', blogRoutes);
 app.use('/api/stakeholders-service', stakeholdersRoutes);
 app.use('/api/tours-service', toursRoutes);
+app.use('/api/payment-service', paymentRoutes);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -56,7 +58,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/', (req, res) => {
   res.status(404).json({
     error: 'Route not found',
-    availableRoutes: ['/api/blog-service', '/api/stakeholders-service', '/api/tours-service', '/health', '/info']
+    availableRoutes: ['/api/blog-service', '/api/stakeholders-service', '/api/tours-service', '/api/payment-service', '/health', '/info']
   });
 });
 
@@ -76,4 +78,5 @@ app.listen(PORT, () => {
   console.log(`   Stakeholders: ${process.env.STAKEHOLDERS_SERVICE_URL || 'http://localhost:4000'}`);
   console.log(`   Stakeholders gRPC: ${process.env.STAKEHOLDERS_GRPC_URL || 'http://localhost:4001'}`);
   console.log(`   Tours: ${process.env.TOURS_SERVICE_URL || 'http://localhost:5000'}`);
+  console.log(`   Payment: ${process.env.PAYMENT_SERVICE_URL || 'http://localhost:6000'}`);
 });

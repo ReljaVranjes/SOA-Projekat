@@ -97,8 +97,5 @@ func ValidateCartForCheckout(userID string) (model.ShoppingCart, error) {
 		return model.ShoppingCart{}, errors.New("ukupna cena mora biti veća od nule")
 	}
 
-	// TODO: Validate each tour exists and is not archived
-	// This will be implemented when we add tour service communication
-
 	return cart, nil
 }
