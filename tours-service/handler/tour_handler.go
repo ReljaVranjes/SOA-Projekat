@@ -404,3 +404,54 @@ func DeleteReview(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Recenzija je uspešno obrisana"})
 }
+
+// GenerateTokens generates purchase tokens for multiple tours (SAGA endpoint)
+func GenerateTokens(c *gin.Context) {
+	var request model.TokenRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Neispravan format zahteva"})
+		return
+	}
+
+	response, err := service.GenerateTokensForTours(request.UserID, request.TourIDs)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, response)
+}
+
+// GetPurchasedTours returns all tours user has purchased
+func GetPurchasedTours(c *gin.Context) {
+	userID, exists := middleware.GetUserID(c)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Korisnik nije autentifikovan"})
+		return
+	}
+
+	tours, err := service.GetUserPurchasedTours(userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, tours)
+}
+
+// DeleteTokens removes purchase tokens (SAGA rollback endpoint)
+func DeleteTokens(c *gin.Context) {
+	var request model.TokenRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Neispravan format zahteva"})
+		return
+	}
+
+	err := service.DeleteTokensForRollback(request.UserID, request.TourIDs)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Tokeni su uspešno obrisani"})
+}

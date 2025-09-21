@@ -34,5 +34,10 @@ func SetupRouter() *gin.Engine {
 	auth.PUT("/profile", handler.UpdateProfile)
 	auth.PUT("/location", handler.UpdateLocation)
 
+	// Balance endpoints
+	auth.GET("/balance", handler.GetBalance)
+	auth.POST("/users/:id/balance/add", handler.AddBalance)
+	auth.PUT("/users/:id/balance", handler.SetBalance)
+
 	return r
 }
