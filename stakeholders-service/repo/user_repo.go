@@ -143,5 +143,4 @@ func SetUserBalance(userID string, balance float64) error {
 
 	_, err = collection.UpdateOne(ctx, filter, update)
 	return err
-	}
 }
