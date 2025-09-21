@@ -1,15 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { ROUTES } from '../constants/routes';
-import PositionSimulator from '../components/PositionSimulator';
-import { locationService } from '../services/locationService';
-import { Location } from '../types/user';
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import { ROUTES } from "../constants/routes";
+import PositionSimulator from "../components/PositionSimulator";
+import { locationService } from "../services/locationService";
+import { Location } from "../types/user";
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
   const [isSimulatorOpen, setIsSimulatorOpen] = useState(false);
-  const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [currentLocation, setCurrentLocation] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
 
   // Load saved location from database and localStorage on component mount
   useEffect(() => {
@@ -19,29 +22,32 @@ const Dashboard: React.FC = () => {
         const userProfile = await locationService.getProfile();
         if (userProfile.currentLocation) {
           setCurrentLocation(userProfile.currentLocation);
-          localStorage.setItem('userLocation', JSON.stringify(userProfile.currentLocation));
+          localStorage.setItem(
+            "userLocation",
+            JSON.stringify(userProfile.currentLocation)
+          );
         } else {
           // Fallback to localStorage if no database location
-          const savedLocation = localStorage.getItem('userLocation');
+          const savedLocation = localStorage.getItem("userLocation");
           if (savedLocation) {
             try {
               const location = JSON.parse(savedLocation);
               setCurrentLocation(location);
             } catch (error) {
-              console.error('Error parsing saved location:', error);
+              console.error("Error parsing saved location:", error);
             }
           }
         }
       } catch (error) {
-        console.error('Error loading user location:', error);
+        console.error("Error loading user location:", error);
         // Fallback to localStorage on error
-        const savedLocation = localStorage.getItem('userLocation');
+        const savedLocation = localStorage.getItem("userLocation");
         if (savedLocation) {
           try {
             const location = JSON.parse(savedLocation);
             setCurrentLocation(location);
           } catch (parseError) {
-            console.error('Error parsing saved location:', parseError);
+            console.error("Error parsing saved location:", parseError);
           }
         }
       }
@@ -52,25 +58,27 @@ const Dashboard: React.FC = () => {
 
   const handleLocationSelect = async (lat: number, lng: number) => {
     const location: Location = { lat, lng };
-    
+
     try {
       // Save to database
       await locationService.updateLocation(location);
-      
+
       // Update local state and cache
       setCurrentLocation(location);
-      localStorage.setItem('userLocation', JSON.stringify(location));
-      
-      console.log('Location saved successfully to database');
+      localStorage.setItem("userLocation", JSON.stringify(location));
+
+      console.log("Location saved successfully to database");
     } catch (error) {
-      console.error('Failed to save location to database:', error);
-      
+      console.error("Failed to save location to database:", error);
+
       // Fallback: save to localStorage only
       setCurrentLocation(location);
-      localStorage.setItem('userLocation', JSON.stringify(location));
-      
+      localStorage.setItem("userLocation", JSON.stringify(location));
+
       // Show user-friendly error message
-      alert('Location saved locally. Please check your internet connection and try again to sync with the server.');
+      alert(
+        "Location saved locally. Please check your internet connection and try again to sync with the server."
+      );
     }
   };
 
@@ -81,7 +89,7 @@ const Dashboard: React.FC = () => {
   const closeSimulator = () => {
     setIsSimulatorOpen(false);
   };
-  
+
   return (
     <div className="space-y-8 relative">
       <div className="text-center">
@@ -95,7 +103,9 @@ const Dashboard: React.FC = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
-          <h3 className="text-lg font-semibold mb-2 text-blue-600">Browse Tours</h3>
+          <h3 className="text-lg font-semibold mb-2 text-blue-600">
+            Browse Tours
+          </h3>
           <p className="text-gray-600 mb-4">
             Discover amazing tours and experiences
           </p>
@@ -107,9 +117,11 @@ const Dashboard: React.FC = () => {
           </Link>
         </div>
 
-        {user?.role === 'Guide' && (
+        {user?.role === "Guide" && (
           <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
-            <h3 className="text-lg font-semibold mb-2 text-green-600">My Tours</h3>
+            <h3 className="text-lg font-semibold mb-2 text-green-600">
+              My Tours
+            </h3>
             <p className="text-gray-600 mb-4">
               Manage your tours and create new ones
             </p>
@@ -122,9 +134,11 @@ const Dashboard: React.FC = () => {
           </div>
         )}
 
-        {user?.role === 'Admin' && (
+        {user?.role === "Admin" && (
           <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
-            <h3 className="text-lg font-semibold mb-2 text-red-600">Admin Panel</h3>
+            <h3 className="text-lg font-semibold mb-2 text-red-600">
+              Admin Panel
+            </h3>
             <p className="text-gray-600 mb-4">
               Manage users and system settings
             </p>
@@ -138,10 +152,28 @@ const Dashboard: React.FC = () => {
         )}
 
         <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
-          <h3 className="text-lg font-semibold mb-2 text-purple-600">Profile</h3>
+          <h3 className="text-lg font-semibold mb-2 text-purple-600">
+            Follow Users
+          </h3>
+          <p className="text-gray-600 mb-4">
+            Connect with other users and discover content
+          </p>
+          <Link
+            to={ROUTES.FOLLOW_USERS}
+            className="inline-block bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 transition-colors"
+          >
+            Follow Users
+          </Link>
+        </div>
+
+        <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+          <h3 className="text-lg font-semibold mb-2 text-indigo-600">
+            Profile
+          </h3>
           <p className="text-gray-600 mb-4">
             Update your profile and preferences
           </p>
+          <button className="inline-block bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 transition-colors" />
           <Link
             to={ROUTES.PROFILE}
             className="inline-block bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 transition-colors"
@@ -152,7 +184,9 @@ const Dashboard: React.FC = () => {
       </div>
 
       <div className="bg-blue-50 p-6 rounded-lg border border-blue-200">
-        <h2 className="text-xl font-semibold mb-4 text-blue-800">Quick Stats</h2>
+        <h2 className="text-xl font-semibold mb-4 text-blue-800">
+          Quick Stats
+        </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="text-center">
             <div className="text-2xl font-bold text-blue-600">12</div>
@@ -170,7 +204,7 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* Position Simulator Button - Fixed in bottom right corner */}
-      {user?.role === 'Tourist' && (
+      {user?.role === "Tourist" && (
         <button
           onClick={openSimulator}
           className="fixed bottom-6 right-6 bg-blue-600 text-white p-4 rounded-full shadow-lg hover:bg-blue-700 transition-colors z-40"
@@ -200,7 +234,7 @@ const Dashboard: React.FC = () => {
       )}
 
       {/* Current Location Display */}
-      {user?.role === 'Tourist' && currentLocation && (
+      {user?.role === "Tourist" && currentLocation && (
         <div className="fixed bottom-6 left-6 bg-white p-3 rounded-lg shadow-lg border border-gray-200 z-40">
           <div className="text-sm text-gray-600">
             <div className="font-semibold text-gray-800">Current Location:</div>

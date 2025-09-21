@@ -27,8 +27,8 @@ const authMiddleware = async (req, res, next) => {
     req.headers['x-user-email'] = user.email;
     req.headers['x-user-role'] = user.role;
     
-    // Optional: Remove the authorization header since services won't need it
-    delete req.headers.authorization;
+    // Keep the authorization header for services that need to make inter-service calls
+    // (like blog service calling followers service)
     
     next();
   } catch (error) {

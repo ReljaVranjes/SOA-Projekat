@@ -12,7 +12,8 @@ export const ROUTES = {
   BLOGS: '/blogs',
   CART: '/cart',
   ORDERS: '/orders',
+  FOLLOW_USERS: "/follow-users",
 } as const;
 
 export type RouteKey = keyof typeof ROUTES;
-export type RouteValue = typeof ROUTES[RouteKey];
+export type RouteValue = (typeof ROUTES)[RouteKey];

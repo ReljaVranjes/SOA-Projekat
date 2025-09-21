@@ -56,8 +56,8 @@ func UpdateUserLocation(email string, location model.Location) (model.User, erro
 }
 
 func GetAllUsersForAdmin(userRole model.UserRole) ([]model.User, error) {
-	if userRole != model.Admin {
-		return nil, errors.New("pristup dozvoljen samo administratorima")
+	if userRole != model.Admin && userRole != model.Tourist {
+		return nil, errors.New("pristup dozvoljen samo administratorima i turistima")
 	}
 
 	users, err := repo.GetAllUsers()
@@ -123,11 +123,12 @@ func SetUserBalance(userID string, balance float64) error {
 }
 
 func GetUserById(userID string) (model.User, error) {
-	user, err := repo.FindUserByID(userID)
+	user, err := repo.FindUserById(userID)
 	if err != nil {
 		return model.User{}, errors.New("korisnik nije pronađen")
 	}
 
+	// Ne vraćamo password iz bezbednosnih razloga
 	user.Password = ""
 	return user, nil
 }

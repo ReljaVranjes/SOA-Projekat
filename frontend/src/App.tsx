@@ -15,6 +15,7 @@ import Admin from './pages/Admin';
 import Blogs from './pages/Blogs';
 import Cart from './pages/Cart';
 import Orders from './pages/Orders';
+import FollowUsers from "./pages/FollowUsers";
 import ProtectedRoute from './components/ProtectedRoute';
 import { ROUTES } from './constants/routes';
 
@@ -65,6 +66,14 @@ function App() {
               element={
                 <ProtectedRoute requireRoles={["Guide"]}>
                   <EditTour />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.FOLLOW_USERS}
+              element={
+                <ProtectedRoute>
+                  <FollowUsers />
                 </ProtectedRoute>
               }
             />
