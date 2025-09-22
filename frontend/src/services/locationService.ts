@@ -18,4 +18,9 @@ export const locationService = {
     const response = await api.get(`${prefix}/profile`);
     return response.data;
   },
+
+  getLocation: async (): Promise<Location> => {
+    const response = await api.get(`${prefix}/location`);
+    return response.data;
+  },
 };

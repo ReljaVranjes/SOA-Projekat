@@ -18,8 +18,17 @@ const Tours: React.FC = () => {
 
   const { loading, error, handleApi } = useApiHandler();
 
+  // State for purchased tours
+  const [purchasedTourIds, setPurchasedTourIds] = useState<string[]>([]);
+
   useEffect(() => {
     loadTours();
+    // Fetch purchased tours for the user
+    if (user?.role === 'Tourist') {
+      toursService.getPurchasedTours()
+        .then(data => setPurchasedTourIds(data.map((t: any) => t.id)))
+        .catch(() => setPurchasedTourIds([]));
+    }
   }, []);
 
   useEffect(() => {
@@ -93,6 +102,11 @@ const Tours: React.FC = () => {
   const isTourInCart = (tourId: string) => {
     const inCart = cart?.items?.some(item => item.tourId === tourId) || false;
     return inCart;
+  };
+
+  // Helper to check if tour is purchased
+  const isTourPurchased = (tourId: string) => {
+    return purchasedTourIds.includes(tourId);
   };
 
   if (loading) {
@@ -202,23 +216,29 @@ const Tours: React.FC = () => {
                   </button>
 
                   {user?.role === 'Tourist' && (
-                    <button
-                      onClick={() => handleAddToCart(tour)}
-                      disabled={addingToCart === tour.id || isTourInCart(tour.id)}
-                      className={`flex-1 px-4 py-2 rounded transition-colors ${isTourInCart(tour.id)
-                        ? 'bg-green-100 text-green-800 cursor-not-allowed'
-                        : addingToCart === tour.id
-                          ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
-                          : 'bg-green-600 text-white hover:bg-green-700'
-                        }`}
-                    >
-                      {addingToCart === tour.id
-                        ? 'Adding...'
-                        : isTourInCart(tour.id)
-                          ? 'In Cart'
-                          : 'Add to Cart'
-                      }
-                    </button>
+                    isTourPurchased(tour.id) ? (
+                      <span className="flex-1 bg-yellow-100 text-yellow-800 px-4 py-2 rounded text-center font-semibold">
+                        Purchased
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => handleAddToCart(tour)}
+                        disabled={addingToCart === tour.id || isTourInCart(tour.id)}
+                        className={`flex-1 px-4 py-2 rounded transition-colors ${isTourInCart(tour.id)
+                          ? 'bg-green-100 text-green-800 cursor-not-allowed'
+                          : addingToCart === tour.id
+                            ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                            : 'bg-green-600 text-white hover:bg-green-700'
+                          }`}
+                      >
+                        {addingToCart === tour.id
+                          ? 'Adding...'
+                          : isTourInCart(tour.id)
+                            ? 'In Cart'
+                            : 'Add to Cart'
+                        }
+                      </button>
+                    )
                   )}
                 </div>
               </div>

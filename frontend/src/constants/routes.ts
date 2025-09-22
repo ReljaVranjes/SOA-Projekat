@@ -13,6 +13,8 @@ export const ROUTES = {
   CART: '/cart',
   ORDERS: '/orders',
   FOLLOW_USERS: "/follow-users",
+  PURCHASED_TOURS: "/purchased-tours",
+  TOUR_EXECUTION: "/tour-execution/:executionId"
 } as const;
 
 export type RouteKey = keyof typeof ROUTES;

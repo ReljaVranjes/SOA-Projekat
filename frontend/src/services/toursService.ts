@@ -142,4 +142,10 @@ export const toursService = {
   deleteReview: async (reviewId: string): Promise<void> => {
     await api.delete(`${prefix}/reviews/${reviewId}`);
   },
+
+  getPurchasedTours: async (): Promise<Tour[]> => {
+    const response = await api.get(`${prefix}/tours/purchased`);
+    return response.data;
+  }
+  
 };

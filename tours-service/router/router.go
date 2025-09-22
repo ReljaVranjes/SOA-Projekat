@@ -37,10 +37,15 @@ func SetupRouter() *gin.Engine {
 	auth.DELETE("/tokens/delete", handler.DeleteTokens)          // SAGA: Rollback tokens
 	auth.GET("/tours/purchased", handler.GetPurchasedTours)      // Get user's purchased tours
 
-	// Tourist routes (authenticated users can review)
+	// Tourist routes (authenticated users can review and execute tours)
 	touristRoutes := auth.Group("/")
 	touristRoutes.Use(middleware.CheckRole("Tourist"))
 	{
+		touristRoutes.POST("/tours/:tourId/execute", handler.CreateTourExecution) // Start tour execution
+		touristRoutes.GET("/tour-executions/:executionId", handler.GetTourExecutionByID) // Get execution details
+		touristRoutes.PUT("/tour-executions/:executionId/status", handler.UpdateTourExecutionStatus) // Update status
+		touristRoutes.POST("/tour-executions/:executionId/keypoint", handler.AddCompletedKeyPoint) // Add completed key point
+
 		touristRoutes.POST("/tours/:tourId/reviews", handler.CreateReview) // Create review
 		touristRoutes.GET("/reviews/my", handler.GetReviewsByTourist)      // Get my reviews
 		touristRoutes.PUT("/reviews/:reviewId", handler.UpdateReview)      // Update my review

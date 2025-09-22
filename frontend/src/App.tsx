@@ -8,6 +8,7 @@ import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Tours from './pages/Tours';
 import TourDetails from './pages/TourDetails';
+import PurchasedTours from './pages/PurchasedTours';
 import MyTours from './pages/MyTours';
 import EditTour from './pages/EditTour';
 import Profile from './pages/Profile';
@@ -17,6 +18,7 @@ import Cart from './pages/Cart';
 import Orders from './pages/Orders';
 import FollowUsers from "./pages/FollowUsers";
 import ProtectedRoute from './components/ProtectedRoute';
+import TourExecution from './pages/TourExecution';
 import { ROUTES } from './constants/routes';
 
 function App() {
@@ -58,6 +60,14 @@ function App() {
               element={
                 <ProtectedRoute requireRoles={["Guide"]}>
                   <MyTours />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.TOUR_EXECUTION}
+              element={
+                <ProtectedRoute requireRoles={["Tourist"]}>
+                  <TourExecution />
                 </ProtectedRoute>
               }
             />
@@ -114,6 +124,14 @@ function App() {
               element={
                 <ProtectedRoute requireRoles={["Tourist"]}>
                   <Orders />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path={ROUTES.PURCHASED_TOURS}
+              element={
+                <ProtectedRoute requireRoles={["Tourist"]}>
+                  <PurchasedTours />
                 </ProtectedRoute>
               }
             />
