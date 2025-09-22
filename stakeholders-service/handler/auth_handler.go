@@ -167,7 +167,7 @@ func GetAllUsers(c *gin.Context) {
 	}
 
 	role := model.UserRole(roleStr.(string))
-	users, err := service.GetAllUsersForAdmin(role)
+	users, err := service.GetAllUsers(role)
 	if err != nil {
 		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 		return

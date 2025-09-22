@@ -7,6 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 interface BlogWithAuthor extends Blog {
   authorName?: string;
+  comments?: { user: string; text: string; createdAt: string }[];
 }
 
 const Blogs: React.FC = () => {
@@ -18,6 +19,8 @@ const Blogs: React.FC = () => {
   const [selectedBlog, setSelectedBlog] = useState<BlogWithAuthor | null>(null);
   const [formData, setFormData] = useState({ title: '', description: '' });
   const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [commentText, setCommentText] = useState('');
+  const [commentLoading, setCommentLoading] = useState(false);
   const { loading, error, handleApi } = useApiHandler();
 
   useEffect(() => {
@@ -58,8 +61,9 @@ const Blogs: React.FC = () => {
     setIsInitialLoading(false);
   };
 
-  const handleReadBlog = (blog: BlogWithAuthor) => {
-    setSelectedBlog(blog);
+  const handleReadBlog = async (blog: BlogWithAuthor) => {
+    const comments = await blogService.getComments(blog._id);
+    setSelectedBlog({ ...blog, comments });
     setIsReadDialogOpen(true);
   };
 
@@ -132,6 +136,26 @@ const Blogs: React.FC = () => {
       }
     } catch (error) {
       console.error('Error liking blog:', error);
+    }
+  };
+
+  // Add comment to a blog
+  const handleAddComment = async (blogId: string) => {
+    if (!commentText.trim()) return;
+    setCommentLoading(true);
+    try {
+      await handleApi(
+        () => blogService.addComment(blogId, { text: commentText, userId: user?.id || '' }),
+        { errorMessage: 'Failed to add comment' }
+      );
+      // Fetch all comments again after adding
+      const comments = await blogService.getComments(blogId);
+      setSelectedBlog(prev =>
+        prev ? { ...prev, comments } : prev
+      );
+      setCommentText('');
+    } finally {
+      setCommentLoading(false);
     }
   };
 
@@ -297,6 +321,50 @@ const Blogs: React.FC = () => {
             <div className="prose max-w-none">
               <div className="h-32 bg-gradient-to-r from-purple-500 to-pink-600 rounded-lg mb-6"></div>
               <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{selectedBlog.description}</p>
+            </div>
+
+            {/* Comments Section */}
+            <div className="mt-8">
+              <h3 className="text-lg font-semibold mb-2">Comments</h3>
+              <div className="space-y-4 mb-4">
+                {selectedBlog.comments && selectedBlog.comments.length > 0 ? (
+                  selectedBlog.comments.map((comment, idx) => (
+                    <div key={idx} className="bg-gray-100 rounded p-3">
+                      <div className="text-sm text-gray-700">{comment.text}</div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        By {comment.user} • {formatDate(comment.createdAt)}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-gray-400">No comments yet.</div>
+                )}
+              </div>
+              {isAuthenticated && (
+                <form
+                  onSubmit={e => {
+                    e.preventDefault();
+                    handleAddComment(selectedBlog._id);
+                  }}
+                  className="flex gap-2"
+                >
+                  <input
+                    type="text"
+                    value={commentText}
+                    onChange={e => setCommentText(e.target.value)}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded focus:outline-none"
+                    placeholder="Add a comment..."
+                    disabled={commentLoading}
+                  />
+                  <button
+                    type="submit"
+                    disabled={!commentText.trim() || commentLoading}
+                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                  >
+                    {commentLoading ? 'Posting...' : 'Post'}
+                  </button>
+                </form>
+              )}
             </div>
 
             <div className="flex justify-end mt-6">
