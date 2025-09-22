@@ -173,7 +173,6 @@ const Dashboard: React.FC = () => {
           <p className="text-gray-600 mb-4">
             Update your profile and preferences
           </p>
-          <button className="inline-block bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 transition-colors" />
           <Link
             to={ROUTES.PROFILE}
             className="inline-block bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 transition-colors"

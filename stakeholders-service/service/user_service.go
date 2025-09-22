@@ -55,10 +55,7 @@ func UpdateUserLocation(email string, location model.Location) (model.User, erro
 	return GetUserProfile(email)
 }
 
-func GetAllUsersForAdmin(userRole model.UserRole) ([]model.User, error) {
-	if userRole != model.Admin && userRole != model.Tourist {
-		return nil, errors.New("pristup dozvoljen samo administratorima i turistima")
-	}
+func GetAllUsers(userRole model.UserRole) ([]model.User, error) {
 
 	users, err := repo.GetAllUsers()
 	if err != nil {
