@@ -101,7 +101,6 @@ func (bc *BalanceClient) DeductBalance(userID string, amount float64) (float64, 
 	}
 
 	if !resp.Success {
-		// Check if it's an insufficient balance error specifically
 		if strings.Contains(resp.Message, "Insufficient balance") {
 			return resp.NewBalance, fmt.Errorf("insufficient balance: %s", resp.Message)
 		}

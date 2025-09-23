@@ -8,7 +8,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// GetUserOrders returns all orders for the authenticated user
 func GetUserOrders(c *gin.Context) {
 	userID, exists := middleware.GetUserID(c)
 	if !exists {
@@ -25,7 +24,6 @@ func GetUserOrders(c *gin.Context) {
 	c.JSON(http.StatusOK, orders)
 }
 
-// GetOrderByID returns a specific order if it belongs to the user
 func GetOrderByID(c *gin.Context) {
 	userID, exists := middleware.GetUserID(c)
 	if !exists {
@@ -45,7 +43,6 @@ func GetOrderByID(c *gin.Context) {
 		return
 	}
 
-	// Check if order belongs to the user
 	if order.UserID != userID {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Nemate pristup ovoj narudžbi"})
 		return

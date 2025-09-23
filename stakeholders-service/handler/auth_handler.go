@@ -9,8 +9,8 @@ import (
 	"strings"
 
 	"stakeholders-service/model"
-	pb "stakeholders-service/proto/block"
 	balancepb "stakeholders-service/proto/balance"
+	pb "stakeholders-service/proto/block"
 	"stakeholders-service/service"
 
 	"github.com/gin-gonic/gin"
@@ -454,8 +454,6 @@ func GetUserById(c *gin.Context) {
 	})
 }
 
-// gRPC Balance Service Methods
-
 func (s *BalanceHandler) GetBalance(ctx context.Context, req *balancepb.GetBalanceRequest) (*balancepb.GetBalanceResponse, error) {
 	log.Printf("🔵 [gRPC] GetBalance called for user_id: %s", req.UserId)
 
@@ -487,7 +485,6 @@ func (s *BalanceHandler) AddBalance(ctx context.Context, req *balancepb.AddBalan
 		}, nil
 	}
 
-	// Get updated balance
 	user, err := service.GetUserById(req.UserId)
 	if err != nil {
 		return &balancepb.AddBalanceResponse{
@@ -507,7 +504,6 @@ func (s *BalanceHandler) AddBalance(ctx context.Context, req *balancepb.AddBalan
 func (s *BalanceHandler) DeductBalance(ctx context.Context, req *balancepb.DeductBalanceRequest) (*balancepb.DeductBalanceResponse, error) {
 	log.Printf("🔵 [gRPC] DeductBalance called for user_id: %s, amount: %f", req.UserId, req.Amount)
 
-	// First, get current balance to validate
 	user, err := service.GetUserById(req.UserId)
 	if err != nil {
 		return &balancepb.DeductBalanceResponse{
@@ -517,7 +513,6 @@ func (s *BalanceHandler) DeductBalance(ctx context.Context, req *balancepb.Deduc
 		}, nil
 	}
 
-	// Check if user has sufficient balance
 	if user.Balance < req.Amount {
 		return &balancepb.DeductBalanceResponse{
 			NewBalance: user.Balance,
@@ -526,7 +521,6 @@ func (s *BalanceHandler) DeductBalance(ctx context.Context, req *balancepb.Deduc
 		}, nil
 	}
 
-	// Deduct balance (add negative amount)
 	err = service.AddUserBalance(req.UserId, -req.Amount)
 	if err != nil {
 		return &balancepb.DeductBalanceResponse{
@@ -536,11 +530,10 @@ func (s *BalanceHandler) DeductBalance(ctx context.Context, req *balancepb.Deduc
 		}, nil
 	}
 
-	// Get updated balance
 	updatedUser, err := service.GetUserById(req.UserId)
 	if err != nil {
 		return &balancepb.DeductBalanceResponse{
-			NewBalance: user.Balance - req.Amount, // Estimate
+			NewBalance: user.Balance - req.Amount,
 			Success:    true,
 			Message:    "Balance deducted successfully (couldn't verify final balance)",
 		}, nil
@@ -555,31 +548,29 @@ func (s *BalanceHandler) DeductBalance(ctx context.Context, req *balancepb.Deduc
 
 func GetLocation(c *gin.Context) {
 	fmt.Println("GetLocation handler called")
-    email, exists := c.Get("email")
-    if !exists {
-        c.JSON(http.StatusUnauthorized, gin.H{"error": "Email nije pronađen u tokenu"})
-        return
-    }
+	email, exists := c.Get("email")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Email nije pronađen u tokenu"})
+		return
+	}
 
-    emailStr, ok := email.(string)
-    if !ok {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "Neispravan format emaila"})
-        return
-    }
+	emailStr, ok := email.(string)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Neispravan format emaila"})
+		return
+	}
 
-    user, err := service.GetUserProfile(emailStr)
-    if err != nil {
-        c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-        return
-    }
-	fmt.Println("RETRIEVED,",user)
-    // Proveri da li je korisnik blokiran
-    if user.Status == model.Blocked {
-        c.JSON(http.StatusForbidden, gin.H{"error": "vaš nalog je blokiran. kontaktirajte administratora"})
-        return
-    }
+	user, err := service.GetUserProfile(emailStr)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+	fmt.Println("RETRIEVED,", user)
+	// Proveri da li je korisnik blokiran
+	if user.Status == model.Blocked {
+		c.JSON(http.StatusForbidden, gin.H{"error": "vaš nalog je blokiran. kontaktirajte administratora"})
+		return
+	}
 
-    c.JSON(http.StatusOK, user.CurrentLocation)
+	c.JSON(http.StatusOK, user.CurrentLocation)
 }
-
-

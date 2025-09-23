@@ -8,7 +8,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Checkout processes user's cart and orchestrates SAGA transaction
 func Checkout(c *gin.Context) {
 	userID, exists := middleware.GetUserID(c)
 	if !exists {
@@ -16,7 +15,6 @@ func Checkout(c *gin.Context) {
 		return
 	}
 
-	// Execute SAGA orchestrator
 	order, err := service.CheckoutOrchestrator(userID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
