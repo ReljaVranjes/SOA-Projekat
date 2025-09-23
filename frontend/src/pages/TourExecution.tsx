@@ -2,7 +2,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { tourExecutionService } from '../services/tourExecutionService';
-import { locationService } from '../services/locationService';
 import PositionSimulator from '../components/PositionSimulator';
 import { toursService } from '../services/toursService'; // Import toursService for keypoints
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
@@ -15,11 +14,6 @@ interface KeyPoint {
   latitude: number;
   longitude: number;
   completedAt?: string;
-}
-
-interface MapProps {
-  keyPoints: KeyPoint[];
-  userLocation: { lat: number; lng: number } | null;
 }
 
 function isWithinRadius(
