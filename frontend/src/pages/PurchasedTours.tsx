@@ -100,7 +100,7 @@ const PurchasedTours: React.FC = () => {
           )}
         </>
       )}
-      {tours.length === 0 ? (
+      {(!tours || tours.length === 0) ? (
         <div className="text-gray-600">You have not purchased any tours yet.</div>
       ) : (
         <ul className="space-y-4">

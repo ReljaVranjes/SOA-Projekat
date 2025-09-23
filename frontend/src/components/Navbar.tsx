@@ -1,8 +1,8 @@
-import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { ROUTES } from '../constants/routes';
-import { useCart } from '../contexts/CartContext';
-import { User } from '../types/user';
+import React from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { ROUTES } from "../constants/routes";
+import { useCart } from "../contexts/CartContext";
+import { User } from "../types/user";
 
 interface NavbarProps {
   isAuthenticated: boolean;
@@ -47,7 +47,7 @@ const Navbar: React.FC<NavbarProps> = ({ isAuthenticated, user, onLogout }) => {
                 >
                   Follow Users
                 </Link>
-                {user?.role === 'Guide' && (
+                {user?.role === "Guide" && (
                   <Link
                     to={ROUTES.MY_TOURS}
                     className="text-white hover:text-blue-200 px-3 py-2 rounded-md text-sm font-medium"
@@ -55,13 +55,16 @@ const Navbar: React.FC<NavbarProps> = ({ isAuthenticated, user, onLogout }) => {
                     My Tours
                   </Link>
                 )}
-                <Link
-                  to={ROUTES.BLOGS}
-                  className="text-white hover:text-blue-200 px-3 py-2 rounded-md text-sm font-medium"
-                >
-                  Blogs
-                </Link>
-                {user?.role === 'Tourist' && (
+
+                {(user?.role === "Tourist" || user?.role === "Guide") && (
+                  <Link
+                    to={ROUTES.BLOGS}
+                    className="text-white hover:text-blue-200 px-3 py-2 rounded-md text-sm font-medium"
+                  >
+                    Blogs
+                  </Link>
+                )}
+                {user?.role === "Tourist" && (
                   <Link
                     to={ROUTES.ORDERS}
                     className="text-white hover:text-blue-200 px-3 py-2 rounded-md text-sm font-medium"
@@ -76,7 +79,7 @@ const Navbar: React.FC<NavbarProps> = ({ isAuthenticated, user, onLogout }) => {
           <div className="flex items-center">
             {isAuthenticated ? (
               <div className="flex items-center space-x-4">
-                {user?.role === 'Tourist' && (
+                {user?.role === "Tourist" && (
                   <Link
                     to={ROUTES.CART}
                     className="relative text-white hover:text-blue-200 px-3 py-2 rounded-md text-sm font-medium"
