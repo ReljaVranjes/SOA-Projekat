@@ -36,6 +36,12 @@ services:
       NEO4J_PLUGINS: '["apoc"]'
     volumes:
       - neo4j_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:7474 || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 30s
   loki:
     image: grafana/loki:2.9.0
     container_name: loki
@@ -105,6 +111,17 @@ services:
     depends_on: [ loki, prometheus ]
     volumes:
       - ./provisioning:/etc/grafana/provisioning:ro
+    networks:
+      - monitoring
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: jaeger
+    ports:
+      - "16686:16686"  # Jaeger UI
+      - "14268:14268"  # HTTP traces collector
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
     networks:
       - monitoring
 
@@ -187,7 +204,8 @@ services:
     ports:
       - "7000:7000"
     depends_on:
-      - neo4j
+      neo4j:
+        condition: service_healthy
     environment:
       - PORT=7000
       - NEO4J_URI=bolt://neo4j:7687
@@ -195,6 +213,10 @@ services:
       - NEO4J_PASSWORD=password
       - JWT_SECRET=mojSuperTajniJWT123
       - GATEWAY_URL=http://gateway:8088
+      - JAEGER_ENDPOINT=http://jaeger:14268/api/traces
+    networks:
+      - default
+      - monitoring
 
 volumes:
   mongodb_data:

@@ -204,6 +204,23 @@ const TourDetails: React.FC = () => {
     return new Date(dateString).toLocaleDateString();
   };
 
+  // Helper function to format travel time
+  const formatTravelTime = (hours: number): string => {
+    if (hours === 0) return 'N/A';
+    if (hours < 1) {
+      const minutes = Math.round(hours * 60);
+      return `${minutes}min`;
+    }
+    if (hours < 24) {
+      const wholeHours = Math.floor(hours);
+      const minutes = Math.round((hours - wholeHours) * 60);
+      return minutes > 0 ? `${wholeHours}h ${minutes}min` : `${wholeHours}h`;
+    }
+    const days = Math.floor(hours / 24);
+    const remainingHours = Math.floor(hours % 24);
+    return `${days}d ${remainingHours}h`;
+  };
+
   const renderStars = (rating: number) => {
     return Array.from({ length: 5 }, (_, i) => (
       <span key={i} className={`text-xl ${i < rating ? 'text-yellow-400' : 'text-gray-300'}`}>
@@ -258,6 +275,9 @@ const TourDetails: React.FC = () => {
             <div className="text-3xl font-bold text-blue-600">${tour.price}</div>
             <div className="text-gray-600">{tour.duration} hours</div>
             <div className="text-gray-600">Max {tour.maxPeople} people</div>
+            {tour.distance && tour.distance > 0 && (
+              <div className="text-gray-600">{tour.distance.toFixed(1)} km</div>
+            )}
           </div>
         </div>
         
@@ -272,6 +292,30 @@ const TourDetails: React.FC = () => {
             ))}
           </div>
         )}
+
+        {/* Travel Times Section */}
+        {tour.distance && tour.distance > 0 && (
+          <div className="bg-gray-50 rounded-lg p-4 mb-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-3">Travel Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="text-center">
+                <div className="text-2xl mb-1">🚶‍♂️</div>
+                <div className="text-sm text-gray-600">Walking</div>
+                <div className="font-medium">{formatTravelTime(tour.travelTimeOnFoot || 0)}</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl mb-1">🚴‍♂️</div>
+                <div className="text-sm text-gray-600">Cycling</div>
+                <div className="font-medium">{formatTravelTime(tour.travelTimeBike || 0)}</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl mb-1">🚗</div>
+                <div className="text-sm text-gray-600">Driving</div>
+                <div className="font-medium">{formatTravelTime(tour.travelTimeCar || 0)}</div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Key Points Section */}
@@ -281,7 +325,7 @@ const TourDetails: React.FC = () => {
         {keypoints && keypoints.length > 0 ? (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-              {keypoints.map((kp, index) => {
+              {keypoints.slice(0, 1).map((kp, index) => {
                 const anyKp: any = kp;
                 const imageUrl = anyKp.imageURL ?? anyKp.image ?? null;
                 return (

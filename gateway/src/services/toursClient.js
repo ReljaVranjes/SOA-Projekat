@@ -37,4 +37,21 @@ module.exports = {
       });
     });
   },
+
+  /**
+   * Get key points by tour ID via gRPC
+   * @param {string} tourId - The tour ID
+   * @returns {Promise<{keypoints: Array, success: boolean, message: string}>}
+   */
+  getKeyPointsByTour(tourId) {
+    return new Promise((resolve, reject) => {
+      client.GetKeyPointsByTour({ tour_id: tourId }, (err, response) => {
+        if (err) {
+          console.error('gRPC GetKeyPointsByTour error:', err);
+          return reject(err);
+        }
+        resolve(response);
+      });
+    });
+  },
 };
