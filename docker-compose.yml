@@ -36,6 +36,12 @@ services:
       NEO4J_PLUGINS: '["apoc"]'
     volumes:
       - neo4j_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:7474 || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 30s
   loki:
     image: grafana/loki:2.9.0
     container_name: loki
@@ -187,7 +193,8 @@ services:
     ports:
       - "7000:7000"
     depends_on:
-      - neo4j
+      neo4j:
+        condition: service_healthy
     environment:
       - PORT=7000
       - NEO4J_URI=bolt://neo4j:7687

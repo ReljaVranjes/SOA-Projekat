@@ -14,13 +14,19 @@ func getTourCollection() string {
 	return "tours"
 }
 
-func CreateTour(tour model.Tour) error {
+func CreateTour(tour *model.Tour) error {
 	collection := config.MongoDB.Collection(getTourCollection())
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	_, err := collection.InsertOne(ctx, tour)
-	return err
+	result, err := collection.InsertOne(ctx, tour)
+	if err != nil {
+		return err
+	}
+
+	// Set the ID from the insert result
+	tour.ID = result.InsertedID.(primitive.ObjectID)
+	return nil
 }
 
 func GetToursByGuideID(guideID primitive.ObjectID) ([]model.Tour, error) {
@@ -64,6 +70,84 @@ func UpdateTourStatus(tourID primitive.ObjectID, status model.TourStatus) error 
 		"$set": bson.M{
 			"status":    status,
 			"updatedAt": primitive.NewDateTimeFromTime(time.Now()),
+		},
+	}
+
+	_, err := collection.UpdateOne(ctx, filter, update)
+	return err
+}
+
+func PublishTour(tourID primitive.ObjectID) error {
+	collection := config.MongoDB.Collection(getTourCollection())
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	now := primitive.NewDateTimeFromTime(time.Now())
+	filter := bson.M{"_id": tourID}
+	update := bson.M{
+		"$set": bson.M{
+			"status":      model.Published,
+			"publishedAt": now,
+			"updatedAt":   now,
+		},
+		"$unset": bson.M{
+			"archivedAt": "",
+		},
+	}
+
+	_, err := collection.UpdateOne(ctx, filter, update)
+	return err
+}
+
+func ArchiveTour(tourID primitive.ObjectID) error {
+	collection := config.MongoDB.Collection(getTourCollection())
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	now := primitive.NewDateTimeFromTime(time.Now())
+	filter := bson.M{"_id": tourID}
+	update := bson.M{
+		"$set": bson.M{
+			"status":     model.Archived,
+			"archivedAt": now,
+			"updatedAt":  now,
+		},
+	}
+
+	_, err := collection.UpdateOne(ctx, filter, update)
+	return err
+}
+
+func UpdateTourDistance(tourID primitive.ObjectID, distance float64) error {
+	collection := config.MongoDB.Collection(getTourCollection())
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	filter := bson.M{"_id": tourID}
+	update := bson.M{
+		"$set": bson.M{
+			"distance":  distance,
+			"updatedAt": primitive.NewDateTimeFromTime(time.Now()),
+		},
+	}
+
+	_, err := collection.UpdateOne(ctx, filter, update)
+	return err
+}
+
+func UpdateTourDistanceAndTravelTimes(tourID primitive.ObjectID, distance, travelTimeOnFoot, travelTimeBike, travelTimeCar float64) error {
+	collection := config.MongoDB.Collection(getTourCollection())
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	filter := bson.M{"_id": tourID}
+	update := bson.M{
+		"$set": bson.M{
+			"distance":         distance,
+			"travelTimeOnFoot": travelTimeOnFoot,
+			"travelTimeBike":   travelTimeBike,
+			"travelTimeCar":    travelTimeCar,
+			"updatedAt":        primitive.NewDateTimeFromTime(time.Now()),
 		},
 	}
 

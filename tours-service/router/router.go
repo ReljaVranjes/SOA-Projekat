@@ -53,6 +53,7 @@ func SetupRouter() *gin.Engine {
 	{
 		guideOnly.POST("/tours", handler.CreateTour)
 		guideOnly.GET("/tours/guide/:guideId", handler.GetToursByGuide)                  // Get tours by guide
+		guideOnly.GET("/tours/:tourId/publish-requirements", handler.CheckTourPublishRequirements) // Check if tour can be published
 		guideOnly.PUT("/tours/:tourId/publish", handler.PublishTour)                     // Publish tour
 		guideOnly.PUT("/tours/:tourId/archive", handler.ArchiveTour)                     // Archive tour
 		guideOnly.POST("/tours/:tourId/keypoints", handler.CreateKeyPoint)               // Create keypoint
