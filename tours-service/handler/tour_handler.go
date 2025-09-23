@@ -11,9 +11,8 @@ import (
 	"tours-service/middleware"
 	"tours-service/model"
 	pb "tours-service/proto/tours"
-	"tours-service/service"
-
 	"github.com/gin-gonic/gin"
+	"tours-service/service"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -454,4 +453,96 @@ func DeleteTokens(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Tokeni su uspešno obrisani"})
+}
+
+// Create a new TourExecution (start tour)
+func CreateTourExecution(c *gin.Context) {
+    tourID := c.Param("tourId")
+    touristID, exists := middleware.GetUserID(c)
+    if !exists {
+        c.JSON(http.StatusUnauthorized, gin.H{"error": "Korisnik nije autentifikovan"})
+        return
+    }
+
+    var req struct {
+        Location struct {
+            Lat float64 `json:"lat"`
+            Lng float64 `json:"lng"`
+        } `json:"location"`
+    }
+    if err := c.ShouldBindJSON(&req); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Neispravan format zahteva"})
+        return
+    }
+
+    execution, err := service.CreateTourExecution(tourID, touristID, req.Location.Lat, req.Location.Lng)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+    c.JSON(http.StatusCreated, execution)
+}
+
+// Get TourExecution by ID
+func GetTourExecutionByID(c *gin.Context) {
+    executionID := c.Param("executionId")
+    objID, err := primitive.ObjectIDFromHex(executionID)
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Neispravan execution ID"})
+        return
+    }
+    execution, err := service.GetTourExecutionByID(objID)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+    c.JSON(http.StatusOK, execution)
+}
+
+// Update TourExecution status (complete/abandon)
+func UpdateTourExecutionStatus(c *gin.Context) {
+    executionID := c.Param("executionId")
+    var req struct {
+        Status string `json:"status"`
+    }
+    if err := c.ShouldBindJSON(&req); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Neispravan format zahteva"})
+        return
+    }
+
+    var status model.TourExecutionStatus
+    switch req.Status {
+    case string(model.Completed):
+        status = model.Completed
+    case string(model.Abandoned):
+        status = model.Abandoned
+    default:
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Neispravan status"})
+        return
+    }
+
+    err := service.UpdateTourExecutionStatus(executionID, status)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+    c.JSON(http.StatusOK, gin.H{"message": "Status updated"})
+}
+
+// Add completed key point to TourExecution
+func AddCompletedKeyPoint(c *gin.Context) {
+    executionID := c.Param("executionId")
+    var req struct {
+        KeyPointID string `json:"keyPointId"`
+    }
+    if err := c.ShouldBindJSON(&req); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Neispravan format zahteva"})
+        return
+    }
+    err := service.AddCompletedKeyPoint(executionID, req.KeyPointID)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+    c.JSON(http.StatusOK, gin.H{"message": "Key point added"})
 }

@@ -552,3 +552,34 @@ func (s *BalanceHandler) DeductBalance(ctx context.Context, req *balancepb.Deduc
 		Message:    "Balance deducted successfully",
 	}, nil
 }
+
+func GetLocation(c *gin.Context) {
+	fmt.Println("GetLocation handler called")
+    email, exists := c.Get("email")
+    if !exists {
+        c.JSON(http.StatusUnauthorized, gin.H{"error": "Email nije pronađen u tokenu"})
+        return
+    }
+
+    emailStr, ok := email.(string)
+    if !ok {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Neispravan format emaila"})
+        return
+    }
+
+    user, err := service.GetUserProfile(emailStr)
+    if err != nil {
+        c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+        return
+    }
+	fmt.Println("RETRIEVED,",user)
+    // Proveri da li je korisnik blokiran
+    if user.Status == model.Blocked {
+        c.JSON(http.StatusForbidden, gin.H{"error": "vaš nalog je blokiran. kontaktirajte administratora"})
+        return
+    }
+
+    c.JSON(http.StatusOK, user.CurrentLocation)
+}
+
+
