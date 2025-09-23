@@ -10,6 +10,19 @@ interface BlogWithAuthor extends Blog {
   comments?: { user: string; text: string; createdAt: string }[];
 }
 
+// Simple markdown to HTML converter
+const markdownToHtml = (markdown: string) => {
+  return markdown
+    .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+    .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+    .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+    .replace(/^\* (.*$)/gim, '<li>$1</li>')
+    .replace(/^\- (.*$)/gim, '<li>$1</li>')
+    .replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>')
+    .replace(/\*(.*)\*/gim, '<em>$1</em>')
+    .replace(/\n/gim, '<br>');
+};
+
 const Blogs: React.FC = () => {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
@@ -21,6 +34,7 @@ const Blogs: React.FC = () => {
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [commentText, setCommentText] = useState('');
   const [commentLoading, setCommentLoading] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
   const { loading, error, handleApi } = useApiHandler();
 
   useEffect(() => {
@@ -88,6 +102,7 @@ const Blogs: React.FC = () => {
     if (result) {
       setIsCreateDialogOpen(false);
       setFormData({ title: '', description: '' });
+      setShowPreview(false);
       loadBlogs(); // Refresh the blogs list
     }
   };
@@ -223,7 +238,12 @@ const Blogs: React.FC = () => {
                   </div>
                 </div>
 
-                <p className="text-gray-600 mb-4">{truncateDescription(blog.description)}</p>
+                <div 
+                  className="text-gray-600 mb-4 text-sm leading-relaxed"
+                  dangerouslySetInnerHTML={{ 
+                    __html: truncateDescription(markdownToHtml(blog.description)) 
+                  }}
+                />
 
                 <div className="flex justify-between items-center">
                   <button
@@ -320,7 +340,10 @@ const Blogs: React.FC = () => {
 
             <div className="prose max-w-none">
               <div className="h-32 bg-gradient-to-r from-purple-500 to-pink-600 rounded-lg mb-6"></div>
-              <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{selectedBlog.description}</p>
+              <div 
+                className="text-gray-700 leading-relaxed"
+                dangerouslySetInnerHTML={{ __html: markdownToHtml(selectedBlog.description) }}
+              />
             </div>
 
             {/* Comments Section */}
@@ -385,7 +408,7 @@ const Blogs: React.FC = () => {
       {/* Create Blog Dialog */}
       {isCreateDialogOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+          <div className="bg-white rounded-lg p-6 w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Create New Blog</h2>
             
             <div className="space-y-4">
@@ -404,17 +427,64 @@ const Blogs: React.FC = () => {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Description
-                </label>
-                <textarea
-                  name="description"
-                  value={formData.description}
-                  onChange={handleInputChange}
-                  rows={6}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Write your blog content..."
-                />
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Description
+                  </label>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowPreview(false)}
+                      className={`px-3 py-1 text-xs rounded ${
+                        !showPreview 
+                          ? 'bg-blue-600 text-white' 
+                          : 'bg-gray-200 text-gray-700'
+                      }`}
+                    >
+                      Write
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowPreview(true)}
+                      className={`px-3 py-1 text-xs rounded ${
+                        showPreview 
+                          ? 'bg-blue-600 text-white' 
+                          : 'bg-gray-200 text-gray-700'
+                      }`}
+                    >
+                      Preview
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="border border-gray-300 rounded-md min-h-[200px]">
+                  {!showPreview ? (
+                    <>
+                      <textarea
+                        name="description"
+                        value={formData.description}
+                        onChange={handleInputChange}
+                        rows={10}
+                        className="w-full px-3 py-2 border-none rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                        placeholder="Write your blog content... (Markdown supported: # ## ### **bold** *italic* - list)"
+                      />
+                      <div className="px-3 py-2 text-xs text-gray-500 border-t bg-gray-50">
+                        <strong>Markdown supported:</strong> # Heading, ## Subheading, **bold**, *italic*, - bullet points
+                      </div>
+                    </>
+                  ) : (
+                    <div className="p-3 min-h-[200px]">
+                      <div 
+                        className="prose max-w-none text-gray-700"
+                        dangerouslySetInnerHTML={{ 
+                          __html: formData.description 
+                            ? markdownToHtml(formData.description) 
+                            : '<span class="text-gray-400">Preview will appear here...</span>'
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -423,6 +493,7 @@ const Blogs: React.FC = () => {
                 onClick={() => {
                   setIsCreateDialogOpen(false);
                   setFormData({ title: '', description: '' });
+                  setShowPreview(false);
                 }}
                 className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 transition-colors"
               >
