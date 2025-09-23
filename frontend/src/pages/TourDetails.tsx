@@ -39,6 +39,9 @@ const TourDetails: React.FC = () => {
   const [isEditReviewModalOpen, setIsEditReviewModalOpen] = useState(false);
   const [editingReview, setEditingReview] = useState<Review | null>(null);
 
+  // State for purchased tours
+  const [purchasedTourIds, setPurchasedTourIds] = useState<string[]>([]);
+
   // Review form state
   const [reviewForm, setReviewForm] = useState({
     rate: 5,
@@ -53,7 +56,13 @@ const TourDetails: React.FC = () => {
       loadKeypoints();
       loadReviews();
     }
-  }, [tourId]);
+    // Fetch purchased tours for the user
+    if (user?.role === 'Tourist') {
+      toursService.getPurchasedTours()
+        .then(data => setPurchasedTourIds(data.map((t: any) => t.id)))
+        .catch(() => setPurchasedTourIds([]));
+    }
+  }, [tourId, user]);
 
   const loadTourData = async () => {
     const result = await handleApi(
@@ -167,9 +176,18 @@ const TourDetails: React.FC = () => {
     setIsEditReviewModalOpen(true);
   };
 
-  // Create map markers
+  // Helper to check if tour is purchased
+  const isTourPurchased = (tourId: string) => {
+    return purchasedTourIds.includes(tourId);
+  };
+
+  // Create map markers - only show markers for visible keypoints
   const markers = useMemo(() => {
-    return (keypoints || [])
+    const visibleKeypoints = user?.role === 'Tourist' && !isTourPurchased(tourId!)
+      ? (keypoints || []).slice(0, 1)
+      : (keypoints || []);
+
+    return visibleKeypoints
       .map((kp, i) => {
         const anyKp: any = kp;
         const lat = Number(anyKp.latitude);
@@ -324,8 +342,25 @@ const TourDetails: React.FC = () => {
         
         {keypoints && keypoints.length > 0 ? (
           <>
+            {/* Show message about keypoints visibility for tourists */}
+            {user?.role === 'Tourist' && !isTourPurchased(tourId!) && keypoints.length > 1 && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                <div className="flex items-center">
+                  <div className="text-yellow-600 mr-3">
+                    🔒
+                  </div>
+                  <div>
+                    <h4 className="text-yellow-800 font-medium">Limited Preview</h4>
+                    <p className="text-yellow-700 text-sm">
+                      You're seeing only the first key point. Purchase this tour to see all {keypoints.length} key points and their details.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-              {keypoints.slice(0, 1).map((kp, index) => {
+              {(user?.role === 'Tourist' && !isTourPurchased(tourId!) ? keypoints.slice(0, 1) : keypoints).map((kp, index) => {
                 const anyKp: any = kp;
                 const imageUrl = anyKp.imageURL ?? anyKp.image ?? null;
                 return (
