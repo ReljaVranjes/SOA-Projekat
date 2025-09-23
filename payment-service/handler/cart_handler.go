@@ -8,7 +8,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// AddToCart adds a tour to user's shopping cart
 func AddToCart(c *gin.Context) {
 	userID, exists := middleware.GetUserID(c)
 	if !exists {
@@ -39,7 +38,6 @@ func AddToCart(c *gin.Context) {
 	})
 }
 
-// GetCart retrieves user's shopping cart
 func GetCart(c *gin.Context) {
 	userID, exists := middleware.GetUserID(c)
 	if !exists {
@@ -56,7 +54,6 @@ func GetCart(c *gin.Context) {
 	c.JSON(http.StatusOK, cart)
 }
 
-// RemoveFromCart removes a tour from user's shopping cart
 func RemoveFromCart(c *gin.Context) {
 	userID, exists := middleware.GetUserID(c)
 	if !exists {
@@ -82,7 +79,6 @@ func RemoveFromCart(c *gin.Context) {
 	})
 }
 
-// ClearCart removes all items from user's cart
 func ClearCart(c *gin.Context) {
 	userID, exists := middleware.GetUserID(c)
 	if !exists {
@@ -101,7 +97,6 @@ func ClearCart(c *gin.Context) {
 	})
 }
 
-// UpdateCartItem updates quantity or price of item in cart (if needed)
 func UpdateCartItem(c *gin.Context) {
 	userID, exists := middleware.GetUserID(c)
 	if !exists {
@@ -125,15 +120,12 @@ func UpdateCartItem(c *gin.Context) {
 		return
 	}
 
-	// For now, we'll implement this as remove + add
-	// First remove the existing item
 	_, err := service.RemoveTourFromCart(userID, tourID)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Tura nije pronađena u korpi"})
 		return
 	}
 
-	// Then add the updated item
 	cart, err := service.AddTourToCart(userID, tourID, request.TourName, request.Price)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

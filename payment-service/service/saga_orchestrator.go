@@ -13,7 +13,6 @@ import (
 	"time"
 )
 
-// SagaStep represents the current step in the SAGA transaction
 type SagaStep int
 
 const (
@@ -26,7 +25,6 @@ const (
 	StepCompleted
 )
 
-// SagaTransaction represents a SAGA transaction state
 type SagaTransaction struct {
 	UserID          string                `json:"userId"`
 	Cart            model.ShoppingCart    `json:"cart"`
@@ -35,19 +33,16 @@ type SagaTransaction struct {
 	CompletedSteps  []SagaStep            `json:"completedSteps"`
 	BalanceDeducted float64               `json:"balanceDeducted"`
 	TokensGenerated []string              `json:"tokensGenerated"`
-	BalanceClient   *client.BalanceClient `json:"-"` // Don't serialize the client
+	BalanceClient   *client.BalanceClient `json:"-"`
 }
 
-// CheckoutOrchestrator handles the SAGA checkout process
 func CheckoutOrchestrator(userID string) (model.Order, error) {
-	// Initialize balance client
 	balanceClient, err := client.NewBalanceClient()
 	if err != nil {
 		return model.Order{}, fmt.Errorf("failed to initialize balance client: %w", err)
 	}
 	defer balanceClient.Close()
 
-	// Initialize SAGA transaction
 	saga := &SagaTransaction{
 		UserID:          userID,
 		CurrentStep:     StepValidateCart,
@@ -56,7 +51,6 @@ func CheckoutOrchestrator(userID string) (model.Order, error) {
 		BalanceClient:   balanceClient,
 	}
 
-	// Execute SAGA steps
 	if err := executeCartValidation(saga); err != nil {
 		return model.Order{}, err
 	}
@@ -82,7 +76,6 @@ func CheckoutOrchestrator(userID string) (model.Order, error) {
 	}
 
 	if err := executeClearCart(saga); err != nil {
-		// Don't rollback if just cart clearing fails
 		fmt.Printf("Warning: Failed to clear cart for user %s: %v\n", userID, err)
 	}
 
@@ -90,7 +83,6 @@ func CheckoutOrchestrator(userID string) (model.Order, error) {
 	return *saga.Order, nil
 }
 
-// Step 1: Validate cart and prepare for checkout
 func executeCartValidation(saga *SagaTransaction) error {
 	fmt.Printf("Usao u validaciju\n")
 	cart, err := ValidateCartForCheckout(saga.UserID)
@@ -104,9 +96,7 @@ func executeCartValidation(saga *SagaTransaction) error {
 	return nil
 }
 
-// Step 2: Deduct balance from stakeholders service
 func executeBalanceDeduction(saga *SagaTransaction) error {
-	// Use gRPC to deduct balance
 	fmt.Printf("Skidam s racuna\n")
 
 	newBalance, err := saga.BalanceClient.DeductBalance(saga.UserID, saga.Cart.Total)
@@ -121,7 +111,6 @@ func executeBalanceDeduction(saga *SagaTransaction) error {
 	return nil
 }
 
-// Step 3: Create pending order
 func executeOrderCreation(saga *SagaTransaction) error {
 	fmt.Printf("Pravim nardzbinu\n")
 	order := model.NewOrder(saga.UserID, saga.Cart)
@@ -137,18 +126,16 @@ func executeOrderCreation(saga *SagaTransaction) error {
 	return nil
 }
 
-// Step 4: Generate purchase tokens via tours service
 func executeTokenGeneration(saga *SagaTransaction) error {
 	fmt.Printf("Generisem tokene\n")
 
-	// return fmt.Errorf("DEBUG: Forced token generation failure for rollback testing")
+	// return fmt.Errorf("DEBUG: TOKENI NEUSPOSNI")
 
 	toursURL := os.Getenv("TOURS_SERVICE_URL")
 	if toursURL == "" {
 		toursURL = "http://tours-service:5000"
 	}
 
-	// Prepare tour IDs for token generation
 	var tourIDs []string
 	for _, item := range saga.Cart.Items {
 		tourIDs = append(tourIDs, item.TourID)
@@ -160,7 +147,6 @@ func executeTokenGeneration(saga *SagaTransaction) error {
 		"tourIds": tourIDs,
 	}
 
-	// Use internal endpoint with service key
 	err := callInternalService(toursURL, "POST", "/internal/tokens/generate", reqBody)
 	if err != nil {
 		return fmt.Errorf("token generation failed: %w", err)
@@ -171,7 +157,6 @@ func executeTokenGeneration(saga *SagaTransaction) error {
 	return nil
 }
 
-// Step 5: Mark order as completed
 func executeOrderCompletion(saga *SagaTransaction) error {
 	fmt.Printf("Cekiram narudzbinu\n")
 
@@ -186,7 +171,6 @@ func executeOrderCompletion(saga *SagaTransaction) error {
 	return nil
 }
 
-// Step 6: Clear user's cart
 func executeClearCart(saga *SagaTransaction) error {
 	err := ClearUserCart(saga.UserID)
 	if err != nil {
@@ -197,11 +181,9 @@ func executeClearCart(saga *SagaTransaction) error {
 	return nil
 }
 
-// Rollback function for failed SAGA transactions
 func rollback(saga *SagaTransaction) {
 	fmt.Printf("🔄 Starting SAGA rollback for user %s at step %d\n", saga.UserID, saga.CurrentStep)
 
-	// Rollback in reverse order of completion
 	for i := len(saga.CompletedSteps) - 1; i >= 0; i-- {
 		step := saga.CompletedSteps[i]
 
@@ -243,7 +225,6 @@ func rollbackTokenGeneration(saga *SagaTransaction) {
 			"tourIds": saga.TokensGenerated,
 		}
 
-		// Use internal endpoint with service key
 		err := callInternalService(toursURL, "DELETE", "/internal/tokens/delete", reqBody)
 		if err != nil {
 			fmt.Printf("❌ Failed to rollback token generation: %v\n", err)
@@ -266,7 +247,6 @@ func rollbackOrderCreation(saga *SagaTransaction) {
 
 func rollbackBalanceDeduction(saga *SagaTransaction) {
 	if saga.BalanceDeducted > 0 {
-		// Use gRPC to restore balance
 		newBalance, err := saga.BalanceClient.AddBalance(saga.UserID, saga.BalanceDeducted)
 		if err != nil {
 			fmt.Printf("❌ Failed to rollback balance deduction: %v\n", err)
@@ -276,14 +256,12 @@ func rollbackBalanceDeduction(saga *SagaTransaction) {
 	}
 }
 
-// Helper function to call internal service endpoints with service key
 func callInternalService(baseURL, method, endpoint string, body interface{}) error {
 	return callExternalServiceWithHeaders(baseURL, method, endpoint, body, map[string]string{
 		"X-Internal-Service-Key": os.Getenv("INTERNAL_SERVICE_KEY"),
 	})
 }
 
-// Generic function to call external services with custom headers
 func callExternalServiceWithHeaders(baseURL, method, endpoint string, body interface{}, headers map[string]string) error {
 	client := &http.Client{
 		Timeout: 30 * time.Second,
@@ -306,7 +284,6 @@ func callExternalServiceWithHeaders(baseURL, method, endpoint string, body inter
 
 	req.Header.Set("Content-Type", "application/json")
 
-	// Add custom headers
 	for key, value := range headers {
 		req.Header.Set(key, value)
 	}
