@@ -110,7 +110,8 @@ export const toursService = {
   // Key Points
   getKeyPointsByTour: async (tourId: string): Promise<KeyPoint[]> => {
     const response = await api.get(`${prefix}/tours/${tourId}/keypoints`);
-    return response.data;
+    // Handle RPC response structure (has keypoints property) vs direct array
+    return response.data.keypoints || response.data;
   },
 
   createKeyPoint: async (tourId: string, keyPointData: FormData): Promise<KeyPoint> => {

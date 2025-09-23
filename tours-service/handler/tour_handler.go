@@ -389,6 +389,34 @@ func (h *ToursHandler) GetTours(ctx context.Context, req *pb.GetToursRequest) (*
 	}, nil
 }
 
+// GetKeyPointsByTour - gRPC metoda za dobijanje ključnih tačaka po tour ID
+func (h *ToursHandler) GetKeyPointsByTour(ctx context.Context, req *pb.GetKeyPointsByTourRequest) (*pb.GetKeyPointsByTourResponse, error) {
+	log.Printf("gRPC GetKeyPointsByTour called for tour ID: %s", req.TourId)
+
+	// Pozivanje ISTE business logike kao HTTP endpoint
+	keyPoints, err := service.GetKeyPointsByTour(req.TourId)
+	if err != nil {
+		log.Printf("Error fetching key points for tour %s: %v", req.TourId, err)
+		return &pb.GetKeyPointsByTourResponse{
+			Keypoints: nil,
+			Success:   false,
+			Message:   "Error fetching key points: " + err.Error(),
+		}, nil
+	}
+
+	// Konvertovanje u protobuf format
+	pbKeyPoints := make([]*pb.KeyPoint, len(keyPoints))
+	for i, keyPoint := range keyPoints {
+		pbKeyPoints[i] = convertKeyPointToProto(keyPoint)
+	}
+
+	return &pb.GetKeyPointsByTourResponse{
+		Keypoints: pbKeyPoints,
+		Success:   true,
+		Message:   "Key points fetched successfully",
+	}, nil
+}
+
 // convertTourToProto - helper funkcija
 func convertTourToProto(tour model.Tour) *pb.Tour {
 	return &pb.Tour{
@@ -405,6 +433,19 @@ func convertTourToProto(tour model.Tour) *pb.Tour {
 		GuideId:     tour.GuideID.Hex(),
 		CreatedAt:   tour.CreatedAt.Time().Format(time.RFC3339),
 		UpdatedAt:   tour.UpdatedAt.Time().Format(time.RFC3339),
+	}
+}
+
+// convertKeyPointToProto - helper funkcija za konvertovanje ključnih tačaka
+func convertKeyPointToProto(keyPoint model.KeyPoint) *pb.KeyPoint {
+	return &pb.KeyPoint{
+		Id:          keyPoint.ID.Hex(),
+		TourId:      keyPoint.TourID.Hex(),
+		Name:        keyPoint.Name,
+		Description: keyPoint.Description,
+		Image:       keyPoint.Image,
+		Longitude:   keyPoint.Longitude,
+		Latitude:    keyPoint.Latitude,
 	}
 }
 
