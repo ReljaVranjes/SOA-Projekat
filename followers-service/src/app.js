@@ -1,8 +1,11 @@
-const express = require("express");
 const dotenv = require("dotenv");
-const neo4jConnection = require("./config/neo4j");
-
 dotenv.config();
+
+const tracing = require("./config/tracing");
+tracing.start();
+
+const express = require("express");
+const neo4jConnection = require("./config/neo4j");
 
 const app = express();
 app.use(express.json());
@@ -37,11 +40,13 @@ neo4jConnection
 process.on("SIGINT", async () => {
   console.log("📴 Shutting down followers service...");
   await neo4jConnection.close();
+  await tracing.shutdown();
   process.exit(0);
 });
 
 process.on("SIGTERM", async () => {
   console.log("📴 Shutting down followers service...");
   await neo4jConnection.close();
+  await tracing.shutdown();
   process.exit(0);
 });
