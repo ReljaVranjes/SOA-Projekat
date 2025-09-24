@@ -48,6 +48,8 @@ describe('blogService and commentService', () => {
     it('should retrieve a blog info by ID', async () => {
       // Arrange
       const mockBlogId = 'blog123';
+      const mockUserId = 'user123';
+      const mockAuthToken = 'mock-auth-token';
 
       const mockRetrievedBlog = {
         _id: 'blog123',
@@ -61,7 +63,7 @@ describe('blogService and commentService', () => {
       Blog.findById = jest.fn().mockResolvedValue(mockRetrievedBlog);
 
       // Act
-      const result = await getBlogById(mockBlogId);
+      const result = await getBlogById(mockBlogId, mockUserId, mockAuthToken);
 
       // Assert
       expect(Blog.findById).toHaveBeenCalledWith(mockBlogId);

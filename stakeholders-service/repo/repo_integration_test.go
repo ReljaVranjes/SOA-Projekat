@@ -32,8 +32,8 @@ func TestMain(m *testing.M) {
 	// Start MongoDB 7 in a container
 	c, err := mongodb.RunContainer(ctx,
 		testcontainers.WithImage("mongo:7"),
-		mongodb.WithUsername("test"),
-		mongodb.WithPassword("test"),
+		mongodb.WithUsername("admin"),
+		mongodb.WithPassword("admin"),
 	)
 	if err != nil {
 		panic(err)

@@ -43,7 +43,7 @@ APPLICATION_URL = "http://localhost:3001"
 
 class TestLoginE2E:
 
-
+    
     def test_successful_login(self, browser: 'WebDriver'):
         """Test successful login with valid credentials"""
         # navigate to login page
@@ -247,8 +247,8 @@ class TestLoginE2E:
 
 
         # Block/unblock 1st user
-        first_block_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//table/tbody/tr[1]//button")))
-        first_block_button.click()
+        block_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//*[@id='root']/div/main/div/div/div[2]/div/table/tbody/tr[4]/td[5]/div/button")))
+        block_button.click()
 
         # Logout
         logout_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//*[@id='root']/div/nav/div/div/div[2]/div/button")))
@@ -259,7 +259,7 @@ class TestLoginE2E:
         # Verify logout successful
         current_url = browser.current_url
         assert "/login" in current_url or current_url == APPLICATION_URL + "/"
-
+    
     def test_create_blog(self, browser: 'WebDriver'):
         """Test creating a blog"""
         # Login as admin
@@ -279,16 +279,18 @@ class TestLoginE2E:
         wait.until(lambda driver: "/login" not in driver.current_url)
         
         # Navigate to blog page
-        browser.get(f"{APPLICATION_URL}/blogs")
-        wait.until(lambda driver: "/blogs" in driver.current_url)
-        
+        blogs_button = browser.find_element(By.XPATH, "//*[@id='root']/div/nav/div/div/div[1]/div/a[4]")
+        blogs_button.click()
+
+        wait.until(lambda driver: "/dashboard" not in driver.current_url)
+
         # Click on create blog button
         create_blog_button = wait.until(EC.element_to_be_clickable((By.XPATH, "//*[@id='root']/div/main/div/div[1]/button")))
         create_blog_button.click()
         
         # Fill in blog form
         title_input = wait.until(EC.presence_of_element_located((By.XPATH, "//*[@id='root']/div/main/div/div[3]/div/div[1]/div[1]/input")))
-        description_input = wait.until(EC.presence_of_element_located((By.XPATH, "//*[@id='root']/div/main/div/div[3]/div/div[1]/div[2]/textarea")))
+        description_input = wait.until(EC.presence_of_element_located((By.XPATH, "//*[@id='root']/div/main/div/div[3]/div/div[1]/div[2]/div[2]/textarea")))
         
         random_title = ''.join(random.choices(string.ascii_uppercase + string.ascii_lowercase, k=8))
         random_desc = ''.join(random.choices(string.ascii_uppercase + string.ascii_lowercase, k=12))

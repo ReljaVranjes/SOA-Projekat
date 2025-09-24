@@ -29,8 +29,8 @@ func TestMain(m *testing.M) {
 
 	c, err := mongodb.RunContainer(ctx,
 		testcontainers.WithImage("mongo:7"),
-		mongodb.WithUsername("test"),
-		mongodb.WithPassword("test"),
+		mongodb.WithUsername("admin"),
+		mongodb.WithPassword("admin"),
 	)
 	if err != nil {
 		fmt.Println("failed to start mongo container:", err)
@@ -84,7 +84,6 @@ func TestMain(m *testing.M) {
 	_ = mongoC.Terminate(ctx)
 	os.Exit(code)
 }
-
 
 func cleanUsersSvc(t *testing.T) {
 	t.Helper()
