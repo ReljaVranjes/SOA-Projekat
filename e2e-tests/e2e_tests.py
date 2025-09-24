@@ -63,7 +63,7 @@ class TestLoginE2E:
         email_input.clear()
         email_input.send_keys("admin@gmail.com")
         password_input.clear()
-        password_input.send_keys("admin")
+        password_input.send_keys("a")
         
         # click login button
         login_button.click()
@@ -131,7 +131,7 @@ class TestLoginE2E:
         email_input.clear()
         email_input.send_keys("admin@gmail.com")
         password_input.clear()
-        password_input.send_keys("admin")
+        password_input.send_keys("a")
         login_button.click()
         
         # Wait for successful login
@@ -234,7 +234,7 @@ class TestLoginE2E:
         email_input.clear()
         email_input.send_keys("admin@gmail.com")
         password_input.clear()
-        password_input.send_keys("admin")
+        password_input.send_keys("a")
         login_button.click()
         
         wait.until(lambda driver: "/login" not in driver.current_url)
@@ -271,9 +271,9 @@ class TestLoginE2E:
         login_button = browser.find_element(By.XPATH, "//button[contains(text(), 'Login') or @type='submit']")
         
         email_input.clear()
-        email_input.send_keys("reljavranjes02@gmail.com")
+        email_input.send_keys("turista@gmail.com")
         password_input.clear()
-        password_input.send_keys("relja")
+        password_input.send_keys("t")
         login_button.click()
         
         wait.until(lambda driver: "/login" not in driver.current_url)
