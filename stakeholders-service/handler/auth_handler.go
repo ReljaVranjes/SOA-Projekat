@@ -2,32 +2,39 @@ package handler
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"strings"
 
 	"stakeholders-service/model"
-	"stakeholders-service/service"
+	balancepb "stakeholders-service/proto/balance"
 	pb "stakeholders-service/proto/block"
+	"stakeholders-service/service"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
 
 type LoginReq struct {
-    Email    string `json:"email"    form:"email"    binding:"required,email"`
-    Password string `json:"password" form:"password" binding:"required"`
+	Email    string `json:"email"    form:"email"    binding:"required,email"`
+	Password string `json:"password" form:"password" binding:"required"`
 }
 
-//  implements the gRPC service
+// implements the gRPC service
 type BlockHandler struct {
 	pb.UnimplementedBlockServiceServer
 }
 
+// implements the Balance gRPC service
+type BalanceHandler struct {
+	balancepb.UnimplementedBalanceServiceServer
+}
+
 func ValidateToken(c *gin.Context) {
 	authHeader := c.GetHeader("Authorization")
-	
+
 	if authHeader == "" || !strings.HasPrefix(authHeader, "Bearer ") {
 		c.JSON(http.StatusUnauthorized, gin.H{
 			"error": "Authorization token missing or malformed",
@@ -92,7 +99,7 @@ func ValidateToken(c *gin.Context) {
 		"user": gin.H{
 			"id":    user.ID.Hex(),
 			"email": user.Email,
-			"role":  string(user.Role),		
+			"role":  string(user.Role),
 		},
 	})
 }
@@ -119,16 +126,16 @@ func Register(c *gin.Context) {
 func Login(c *gin.Context) {
 	var input LoginReq
 
-    // Prihvata JSON ili form na osnovu Content-Type (ako želiš striktno JSON, koristi ShouldBindJSON)
-    if err := c.ShouldBind(&input); err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{
-            "error":   "Neispravan unos",
-            "details": err.Error(),
-        })
-        return
-    }
-    
-    log.Printf("Parsed login data - Email: %s, Password: [hidden]", input.Email)
+	// Prihvata JSON ili form na osnovu Content-Type (ako želiš striktno JSON, koristi ShouldBindJSON)
+	if err := c.ShouldBind(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":   "Neispravan unos",
+			"details": err.Error(),
+		})
+		return
+	}
+
+	log.Printf("Parsed login data - Email: %s, Password: [hidden]", input.Email)
 
 	// Servis obrada
 	res, err := service.LoginUser(input.Email, input.Password)
@@ -160,7 +167,7 @@ func GetAllUsers(c *gin.Context) {
 	}
 
 	role := model.UserRole(roleStr.(string))
-	users, err := service.GetAllUsersForAdmin(role)
+	users, err := service.GetAllUsers(role)
 	if err != nil {
 		c.JSON(http.StatusForbidden, gin.H{"error": err.Error()})
 		return
@@ -345,6 +352,82 @@ func UpdateLocation(c *gin.Context) {
 	})
 }
 
+// GetBalance - user gets their current balance
+func GetBalance(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Korisnik nije autentifikovan"})
+		return
+	}
+
+	user, err := service.GetUserById(userID.(string))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Greška prilikom dobavljanja korisnika"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"balance": user.Balance,
+	})
+}
+
+func AddBalance(c *gin.Context) {
+
+	targetUserID := c.Param("id")
+	if targetUserID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "User ID je obavezan"})
+		return
+	}
+
+	var request struct {
+		Amount float64 `json:"amount" binding:"required,min=0"`
+	}
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Neispravan format zahteva"})
+		return
+	}
+
+	err := service.AddUserBalance(targetUserID, request.Amount)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Balans je uspešno dodat",
+		"amount":  request.Amount,
+	})
+}
+
+func SetBalance(c *gin.Context) {
+
+	targetUserID := c.Param("id")
+	if targetUserID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "User ID je obavezan"})
+		return
+	}
+
+	var request struct {
+		Balance float64 `json:"balance" binding:"required,min=0"`
+	}
+
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Neispravan format zahteva"})
+		return
+	}
+
+	err := service.SetUserBalance(targetUserID, request.Balance)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Balans je uspešno postavljen",
+		"balance": request.Balance,
+	})
+}
 
 func GetUserById(c *gin.Context) {
 	userID := c.Param("id")
@@ -369,4 +452,125 @@ func GetUserById(c *gin.Context) {
 		"status":    string(user.Status),
 		"name":      user.FirstName + " " + user.LastName, // Combined name for blog component
 	})
+}
+
+func (s *BalanceHandler) GetBalance(ctx context.Context, req *balancepb.GetBalanceRequest) (*balancepb.GetBalanceResponse, error) {
+	log.Printf("🔵 [gRPC] GetBalance called for user_id: %s", req.UserId)
+
+	user, err := service.GetUserById(req.UserId)
+	if err != nil {
+		return &balancepb.GetBalanceResponse{
+			Balance: 0,
+			Success: false,
+			Message: "User not found",
+		}, nil
+	}
+
+	return &balancepb.GetBalanceResponse{
+		Balance: user.Balance,
+		Success: true,
+		Message: "Balance retrieved successfully",
+	}, nil
+}
+
+func (s *BalanceHandler) AddBalance(ctx context.Context, req *balancepb.AddBalanceRequest) (*balancepb.AddBalanceResponse, error) {
+	log.Printf("🔵 [gRPC] AddBalance called for user_id: %s, amount: %f", req.UserId, req.Amount)
+
+	err := service.AddUserBalance(req.UserId, req.Amount)
+	if err != nil {
+		return &balancepb.AddBalanceResponse{
+			NewBalance: 0,
+			Success:    false,
+			Message:    err.Error(),
+		}, nil
+	}
+
+	user, err := service.GetUserById(req.UserId)
+	if err != nil {
+		return &balancepb.AddBalanceResponse{
+			NewBalance: 0,
+			Success:    false,
+			Message:    "Failed to retrieve updated balance",
+		}, nil
+	}
+
+	return &balancepb.AddBalanceResponse{
+		NewBalance: user.Balance,
+		Success:    true,
+		Message:    "Balance updated successfully",
+	}, nil
+}
+
+func (s *BalanceHandler) DeductBalance(ctx context.Context, req *balancepb.DeductBalanceRequest) (*balancepb.DeductBalanceResponse, error) {
+	log.Printf("🔵 [gRPC] DeductBalance called for user_id: %s, amount: %f", req.UserId, req.Amount)
+
+	user, err := service.GetUserById(req.UserId)
+	if err != nil {
+		return &balancepb.DeductBalanceResponse{
+			NewBalance: 0,
+			Success:    false,
+			Message:    "User not found",
+		}, nil
+	}
+
+	if user.Balance < req.Amount {
+		return &balancepb.DeductBalanceResponse{
+			NewBalance: user.Balance,
+			Success:    false,
+			Message:    fmt.Sprintf("Insufficient balance. Current: %.2f, Required: %.2f", user.Balance, req.Amount),
+		}, nil
+	}
+
+	err = service.AddUserBalance(req.UserId, -req.Amount)
+	if err != nil {
+		return &balancepb.DeductBalanceResponse{
+			NewBalance: user.Balance,
+			Success:    false,
+			Message:    err.Error(),
+		}, nil
+	}
+
+	updatedUser, err := service.GetUserById(req.UserId)
+	if err != nil {
+		return &balancepb.DeductBalanceResponse{
+			NewBalance: user.Balance - req.Amount,
+			Success:    true,
+			Message:    "Balance deducted successfully (couldn't verify final balance)",
+		}, nil
+	}
+
+	return &balancepb.DeductBalanceResponse{
+		NewBalance: updatedUser.Balance,
+		Success:    true,
+		Message:    "Balance deducted successfully",
+	}, nil
+}
+
+func GetLocation(c *gin.Context) {
+	fmt.Println("GetLocation handler called")
+	email, exists := c.Get("email")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Email nije pronađen u tokenu"})
+		return
+	}
+
+	emailStr, ok := email.(string)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Neispravan format emaila"})
+		return
+	}
+
+	user, err := service.GetUserProfile(emailStr)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+	fmt.Println("RETRIEVED,", user)
+	// Proveri da li je korisnik blokiran
+	if user.Status == model.Blocked {
+		c.JSON(http.StatusForbidden, gin.H{"error": "vaš nalog je blokiran. kontaktirajte administratora"})
+		return
+	}
+
+	c.JSON(http.StatusOK, user.CurrentLocation)
 }

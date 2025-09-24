@@ -4,8 +4,6 @@ import (
 	"errors"
 	"stakeholders-service/model"
 	"stakeholders-service/repo"
-
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 func GetUserProfile(email string) (model.User, error) {
@@ -57,10 +55,7 @@ func UpdateUserLocation(email string, location model.Location) (model.User, erro
 	return GetUserProfile(email)
 }
 
-func GetAllUsersForAdmin(userRole model.UserRole) ([]model.User, error) {
-	if userRole != model.Admin {
-		return nil, errors.New("pristup dozvoljen samo administratorima")
-	}
+func GetAllUsers(userRole model.UserRole) ([]model.User, error) {
 
 	users, err := repo.GetAllUsers()
 	if err != nil {
@@ -100,22 +95,37 @@ func UnblockUser(adminRole model.UserRole, userID string) error {
 	return nil
 }
 
-
-
-func GetUserById(userID string) (model.User, error) {
-	// Convert string ID to ObjectID
-	objectID, err := primitive.ObjectIDFromHex(userID)
+// AddUserBalance adds amount to user's balance
+func AddUserBalance(userID string, amount float64) error {
+	err := repo.UpdateUserBalance(userID, amount)
 	if err != nil {
-		return model.User{}, errors.New("neispravan ID format")
+		return errors.New("greška prilikom dodavanja balansa")
 	}
 
-	// Find user by ID
-	user, err := repo.FindUserById(objectID)
+	return nil
+}
+
+// SetUserBalance sets exact balance for user
+func SetUserBalance(userID string, balance float64) error {
+	if balance < 0 {
+		return errors.New("balans ne može biti negativan")
+	}
+
+	err := repo.SetUserBalance(userID, balance)
+	if err != nil {
+		return errors.New("greška prilikom postavljanja balansa")
+	}
+
+	return nil
+}
+
+func GetUserById(userID string) (model.User, error) {
+	user, err := repo.FindUserById(userID)
 	if err != nil {
 		return model.User{}, errors.New("korisnik nije pronađen")
 	}
 
-	// Remove password for security
+	// Ne vraćamo password iz bezbednosnih razloga
 	user.Password = ""
 	return user, nil
 }

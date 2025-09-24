@@ -15,14 +15,26 @@ const createBlog = async (req, res) => {
 };
 
 const getAllBlogs = async (req, res) => {
-  const blogs = await blogService.getAllBlogs();
-  res.json(blogs);
+  try {
+    const userId = req.user?.id;
+    const authToken = req.headers.authorization;
+    const blogs = await blogService.getAllBlogs(userId, authToken);
+    res.json(blogs);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch blogs', details: err.message });
+  }
 };
 
 const getBlogById = async (req, res) => {
-  const blog = await blogService.getBlogById(req.params.id);
-  if (!blog) return res.status(404).json({ error: 'Blog not found' });
-  res.json(blog);
+  try {
+    const userId = req.user?.id;
+    const authToken = req.headers.authorization;
+    const blog = await blogService.getBlogById(req.params.id, userId, authToken);
+    if (!blog) return res.status(404).json({ error: 'Blog not found or access denied' });
+    res.json(blog);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch blog', details: err.message });
+  }
 };
 
 const likeBlog = async (req, res) => {

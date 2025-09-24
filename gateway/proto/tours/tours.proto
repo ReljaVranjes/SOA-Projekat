@@ -32,7 +32,31 @@ message GetToursResponse {
   string message = 4;
 }
 
+// Request za dobijanje ključnih tačaka po tour ID
+message GetKeyPointsByTourRequest {
+  string tour_id = 1; // tour ID kao string
+}
+
+// Pojedinačna ključna tačka
+message KeyPoint {
+  string id = 1;            // _id (ObjectId kao string)
+  string tour_id = 2;       // tourId (ObjectId kao string)
+  string name = 3;          // name
+  string description = 4;   // description
+  string image = 5;         // image path
+  double longitude = 6;     // longitude
+  double latitude = 7;      // latitude
+}
+
+// Response sa listom ključnih tačaka
+message GetKeyPointsByTourResponse {
+  repeated KeyPoint keypoints = 1;
+  bool success = 2;
+  string message = 3;
+}
+
 // Tours servis
 service ToursService {
   rpc GetTours(GetToursRequest) returns (GetToursResponse);
+  rpc GetKeyPointsByTour(GetKeyPointsByTourRequest) returns (GetKeyPointsByTourResponse);
 }

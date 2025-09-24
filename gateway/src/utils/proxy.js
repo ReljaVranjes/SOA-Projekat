@@ -1,12 +1,14 @@
-const http = require('http');
-const https = require('https');
-const { URL } = require('url');
+const http = require("http");
+const https = require("https");
+const { URL } = require("url");
 
 const proxyRequest = (targetUrl) => {
+  console.log("USLI SMO TU JEBEM MU KEVu");
   return (req, res, next) => {
+    console.log(`🔥 PROXY CALLED: ${req.method} ${req.path} -> ${targetUrl}`);
     try {
       const url = new URL(targetUrl + req.path);
-      const isHttps = url.protocol === 'https:';
+      const isHttps = url.protocol === "https:";
       const client = isHttps ? https : http;
       console.log(`🌐 Proxy target URL: ${url.href}`);
 
@@ -18,9 +20,9 @@ const proxyRequest = (targetUrl) => {
         method: req.method,
         headers: {
           ...req.headers,
-          host: url.host // Važno za target server
+          host: url.host, // Važno za target server
         },
-        timeout: 30000
+        timeout: 30000,
       };
 
       console.log(`🔄 Proxying: ${req.method} ${targetUrl}${req.path}`);
@@ -31,8 +33,10 @@ const proxyRequest = (targetUrl) => {
         res.status(proxyRes.statusCode);
 
         // Forward headers (osim onih koje mogu da prave probleme)
-        Object.keys(proxyRes.headers).forEach(key => {
-          if (!['connection', 'transfer-encoding'].includes(key.toLowerCase())) {
+        Object.keys(proxyRes.headers).forEach((key) => {
+          if (
+            !["connection", "transfer-encoding"].includes(key.toLowerCase())
+          ) {
             res.set(key, proxyRes.headers[key]);
           }
         });
@@ -42,34 +46,33 @@ const proxyRequest = (targetUrl) => {
       });
 
       // Error handling
-      proxyReq.on('error', (error) => {
+      proxyReq.on("error", (error) => {
         console.error(`❌ Proxy error: ${error.message}`);
         if (!res.headersSent) {
           res.status(503).json({
-            error: 'Service unavailable',
-            message: error.message
+            error: "Service unavailable",
+            message: error.message,
           });
         }
       });
 
-      proxyReq.on('timeout', () => {
-        console.error('❌ Proxy timeout');
+      proxyReq.on("timeout", () => {
+        console.error("❌ Proxy timeout");
         proxyReq.destroy();
         if (!res.headersSent) {
           res.status(504).json({
-            error: 'Gateway timeout'
+            error: "Gateway timeout",
           });
         }
       });
 
       // Pipe request body
       req.pipe(proxyReq);
-
     } catch (error) {
       console.error(`❌ Proxy setup error: ${error.message}`);
       res.status(500).json({
-        error: 'Gateway configuration error',
-        message: error.message
+        error: "Gateway configuration error",
+        message: error.message,
       });
     }
   };

@@ -7,13 +7,13 @@ import (
 	"mime/multipart"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 	"tours-service/middleware"
 	"tours-service/model"
 	pb "tours-service/proto/tours"
-	"tours-service/service"
-
 	"github.com/gin-gonic/gin"
+	"tours-service/service"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
@@ -29,6 +29,19 @@ func CreateTour(c *gin.Context) {
 		return
 	}
 
+	// Check if this is multipart form data (tour with key points)
+	contentType := c.Request.Header.Get("Content-Type")
+	fmt.Printf("DEBUG: CreateTour Content-Type: %s\n", contentType)
+
+	if contentType != "" && strings.Contains(contentType, "multipart/form-data") {
+		fmt.Printf("DEBUG: Using multipart approach (tour with key points)\n")
+		CreateTourWithKeyPoints(c, guideID)
+		return
+	}
+
+	fmt.Printf("DEBUG: Using JSON approach (tour without key points)\n")
+
+	// Original JSON-only tour creation
 	var tourData model.Tour
 	if err := c.ShouldBindJSON(&tourData); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Neispravan JSON format"})
@@ -42,6 +55,205 @@ func CreateTour(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, tour)
+}
+
+func CreateTourWithKeyPoints(c *gin.Context, guideID string) {
+	fmt.Printf("DEBUG: CreateTourWithKeyPoints called for guideID: %s\n", guideID)
+
+	// Parse tour data from form
+	name := c.PostForm("name")
+	description := c.PostForm("description")
+	level := c.PostForm("level")
+	tags := c.PostFormArray("tags[]")
+	priceStr := c.PostForm("price")
+	durationStr := c.PostForm("duration")
+	maxPeopleStr := c.PostForm("maxPeople")
+
+	fmt.Printf("DEBUG: Tour form data - name: %s, description: %s, level: %s, price: %s, duration: %s, maxPeople: %s, tags: %v\n",
+		name, description, level, priceStr, durationStr, maxPeopleStr, tags)
+
+	// Parse and create key points
+	form, err := c.MultipartForm()
+	if err != nil {
+		fmt.Printf("DEBUG: Error parsing multipart form: %v\n", err)
+		c.JSON(http.StatusCreated, gin.H{"error": "Error parsing form: " + err.Error()}) // Return tour even if no key points
+		return
+	}
+
+	// Get key points data
+	keyPointNames := form.Value["keyPointNames[]"]
+	keyPointDescriptions := form.Value["keyPointDescriptions[]"]
+	keyPointLatitudes := form.Value["keyPointLatitudes[]"]
+	keyPointLongitudes := form.Value["keyPointLongitudes[]"]
+	keyPointImages := form.File["keyPointImages[]"]
+
+	fmt.Printf("DEBUG: Key points data - names: %v, descriptions: %v, latitudes: %v, longitudes: %v, images: %d\n",
+		keyPointNames, keyPointDescriptions, keyPointLatitudes, keyPointLongitudes, len(keyPointImages))
+
+	if name == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Ime ture je obavezno"})
+		return
+	}
+
+	price, err := strconv.ParseFloat(priceStr, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Neispravna cena"})
+		return
+	}
+
+	duration, err := strconv.Atoi(durationStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Neispravno trajanje"})
+		return
+	}
+
+	maxPeople, err := strconv.Atoi(maxPeopleStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Neispravan broj ljudi"})
+		return
+	}
+
+	// Create tour data
+	tourData := model.Tour{
+		Name:        name,
+		Description: description,
+		Level:       level,
+		Tags:        tags,
+		Price:       price,
+		Duration:    duration,
+		MaxPeople:   maxPeople,
+	}
+
+	// Create the tour first and get the generated ID
+	tour, err := service.CreateTour(tourData, guideID)
+	if err != nil {
+		fmt.Printf("DEBUG: Failed to create tour: %v\n", err)
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	fmt.Printf("DEBUG: Tour created successfully with ID: %s\n", tour.ID.Hex())
+
+	// Validate that we have a valid tour ID before proceeding
+	if tour.ID.IsZero() {
+		fmt.Printf("DEBUG: Error - Tour ID is empty/zero after creation\n")
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate valid tour ID"})
+		return
+	}
+
+	// Now create key points using the saved tour's ID
+	fmt.Printf("DEBUG: Creating %d key points for tour ID: %s\n", len(keyPointNames), tour.ID.Hex())
+
+	for i := 0; i < len(keyPointNames); i++ {
+		if keyPointNames[i] == "" || i >= len(keyPointLatitudes) || i >= len(keyPointLongitudes) {
+			fmt.Printf("DEBUG: Skipping key point %d - missing required data\n", i)
+			continue
+		}
+
+		latitude, err := strconv.ParseFloat(keyPointLatitudes[i], 64)
+		if err != nil {
+			fmt.Printf("DEBUG: Skipping key point %d - invalid latitude: %v\n", i, err)
+			continue
+		}
+
+		longitude, err := strconv.ParseFloat(keyPointLongitudes[i], 64)
+		if err != nil {
+			fmt.Printf("DEBUG: Skipping key point %d - invalid longitude: %v\n", i, err)
+			continue
+		}
+
+		description := ""
+		if i < len(keyPointDescriptions) {
+			description = keyPointDescriptions[i]
+		}
+
+		keyPointData := model.KeyPoint{
+			TourID:      tour.ID, // Using the saved tour's valid ID
+			Name:        keyPointNames[i],
+			Description: description,
+			Latitude:    latitude,
+			Longitude:   longitude,
+		}
+
+		var image *multipart.FileHeader
+		if i < len(keyPointImages) {
+			image = keyPointImages[i]
+		}
+
+		fmt.Printf("DEBUG: Creating key point %d: name=%s, tourID=%s, lat=%f, lng=%f\n",
+			i, keyPointNames[i], tour.ID.Hex(), latitude, longitude)
+
+		keyPoint, err := service.CreateKeyPoint(keyPointData, image)
+		if err != nil {
+			fmt.Printf("DEBUG: Failed to create key point %s: %v\n", keyPointNames[i], err)
+		} else {
+			fmt.Printf("DEBUG: Successfully created key point %s with ID: %s\n", keyPointNames[i], keyPoint.ID.Hex())
+		}
+	}
+
+	// Calculate and update tour distance after all key points are created
+	if len(keyPointNames) > 1 {
+		fmt.Printf("DEBUG: Calculating distance for tour with %d key points\n", len(keyPointNames))
+
+		// Get all key points for this tour to calculate distance
+		keyPoints, err := service.GetKeyPointsByTour(tour.ID.Hex())
+		if err != nil {
+			fmt.Printf("DEBUG: Warning - could not fetch key points for distance calculation: %v\n", err)
+		} else {
+			distance := service.CalculateTourDistance(keyPoints)
+			fmt.Printf("DEBUG: Calculated tour distance: %.2f km\n", distance)
+
+			// Update tour with calculated distance and travel times
+			err = service.UpdateTourDistanceAndTravelTimes(tour.ID.Hex(), distance)
+			if err != nil {
+				fmt.Printf("DEBUG: Warning - could not update tour distance and travel times: %v\n", err)
+			} else {
+				// Update the tour object we're returning with calculated values
+				tour.Distance = distance
+				if distance > 0 {
+					tour.TravelTimeOnFoot = distance / 5.0   // 5 km/h
+					tour.TravelTimeBike = distance / 25.0    // 25 km/h
+					tour.TravelTimeCar = distance / 80.0     // 80 km/h
+				}
+				fmt.Printf("DEBUG: Successfully updated tour distance and travel times\n")
+			}
+		}
+	}
+
+	c.JSON(http.StatusCreated, tour)
+}
+
+// recalculateTourDistance is a helper function to recalculate and update tour distance and travel times
+func recalculateTourDistance(tourID string) {
+	fmt.Printf("DEBUG: Recalculating distance and travel times for tour: %s\n", tourID)
+
+	// Get all key points for this tour
+	keyPoints, err := service.GetKeyPointsByTour(tourID)
+	if err != nil {
+		fmt.Printf("DEBUG: Warning - could not fetch key points for distance recalculation: %v\n", err)
+		return
+	}
+
+	// Calculate new distance
+	distance := service.CalculateTourDistance(keyPoints)
+	fmt.Printf("DEBUG: Recalculated tour distance: %.2f km for %d key points\n", distance, len(keyPoints))
+
+	// Update tour with new distance and calculated travel times
+	err = service.UpdateTourDistanceAndTravelTimes(tourID, distance)
+	if err != nil {
+		fmt.Printf("DEBUG: Warning - could not update tour distance and travel times: %v\n", err)
+	} else {
+		// Calculate travel times for logging
+		if distance > 0 {
+			onFoot := distance / 5.0   // 5 km/h
+			bike := distance / 25.0    // 25 km/h
+			car := distance / 80.0     // 80 km/h
+			fmt.Printf("DEBUG: Successfully updated tour distance to %.2f km\n", distance)
+			fmt.Printf("DEBUG: Travel times - On foot: %.2f hours, Bike: %.2f hours, Car: %.2f hours\n", onFoot, bike, car)
+		} else {
+			fmt.Printf("DEBUG: Successfully updated tour distance to %.2f km (no travel times for zero distance)\n", distance)
+		}
+	}
 }
 
 func GetToursByGuide(c *gin.Context) {
@@ -82,6 +294,21 @@ func PublishTour(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Tura je uspešno objavljena"})
 }
 
+func CheckTourPublishRequirements(c *gin.Context) {
+	tourID := c.Param("tourId")
+
+	canPublish, missingRequirements, err := service.CanTourBePublished(tourID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"canPublish":           canPublish,
+		"missingRequirements": missingRequirements,
+	})
+}
+
 func ArchiveTour(c *gin.Context) {
 	tourID := c.Param("tourId")
 	guideID, exists := middleware.GetUserID(c)
@@ -106,7 +333,29 @@ func GetAllTours(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, tours)
+	// Filter only published tours for public endpoint
+	var publishedTours []model.Tour
+	for _, tour := range tours {
+		if tour.Status == model.Published {
+			publishedTours = append(publishedTours, tour)
+		}
+	}
+
+	fmt.Printf("DEBUG: Returning %d published tours with distance/travel time data\n", len(publishedTours))
+	if len(publishedTours) > 0 {
+		fmt.Printf("DEBUG: First tour - Distance: %.2f, Travel times: %.2f/%.2f/%.2f\n",
+			publishedTours[0].Distance,
+			publishedTours[0].TravelTimeOnFoot,
+			publishedTours[0].TravelTimeBike,
+			publishedTours[0].TravelTimeCar)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"success": true,
+		"message": "Tours fetched successfully",
+		"total_count": len(publishedTours),
+		"tours": publishedTours,
+	})
 }
 
 // GetTours - gRPC metoda (nova)
@@ -139,6 +388,34 @@ func (h *ToursHandler) GetTours(ctx context.Context, req *pb.GetToursRequest) (*
 	}, nil
 }
 
+// GetKeyPointsByTour - gRPC metoda za dobijanje ključnih tačaka po tour ID
+func (h *ToursHandler) GetKeyPointsByTour(ctx context.Context, req *pb.GetKeyPointsByTourRequest) (*pb.GetKeyPointsByTourResponse, error) {
+	log.Printf("gRPC GetKeyPointsByTour called for tour ID: %s", req.TourId)
+
+	// Pozivanje ISTE business logike kao HTTP endpoint
+	keyPoints, err := service.GetKeyPointsByTour(req.TourId)
+	if err != nil {
+		log.Printf("Error fetching key points for tour %s: %v", req.TourId, err)
+		return &pb.GetKeyPointsByTourResponse{
+			Keypoints: nil,
+			Success:   false,
+			Message:   "Error fetching key points: " + err.Error(),
+		}, nil
+	}
+
+	// Konvertovanje u protobuf format
+	pbKeyPoints := make([]*pb.KeyPoint, len(keyPoints))
+	for i, keyPoint := range keyPoints {
+		pbKeyPoints[i] = convertKeyPointToProto(keyPoint)
+	}
+
+	return &pb.GetKeyPointsByTourResponse{
+		Keypoints: pbKeyPoints,
+		Success:   true,
+		Message:   "Key points fetched successfully",
+	}, nil
+}
+
 // convertTourToProto - helper funkcija
 func convertTourToProto(tour model.Tour) *pb.Tour {
 	return &pb.Tour{
@@ -151,10 +428,23 @@ func convertTourToProto(tour model.Tour) *pb.Tour {
 		Price:       tour.Price,
 		Duration:    int32(tour.Duration),
 		MaxPeople:   int32(tour.MaxPeople),
-		KeyPoints:   "", 
+		KeyPoints:   "",
 		GuideId:     tour.GuideID.Hex(),
 		CreatedAt:   tour.CreatedAt.Time().Format(time.RFC3339),
 		UpdatedAt:   tour.UpdatedAt.Time().Format(time.RFC3339),
+	}
+}
+
+// convertKeyPointToProto - helper funkcija za konvertovanje ključnih tačaka
+func convertKeyPointToProto(keyPoint model.KeyPoint) *pb.KeyPoint {
+	return &pb.KeyPoint{
+		Id:          keyPoint.ID.Hex(),
+		TourId:      keyPoint.TourID.Hex(),
+		Name:        keyPoint.Name,
+		Description: keyPoint.Description,
+		Image:       keyPoint.Image,
+		Longitude:   keyPoint.Longitude,
+		Latitude:    keyPoint.Latitude,
 	}
 }
 
@@ -224,6 +514,9 @@ func CreateKeyPoint(c *gin.Context) {
 		return
 	}
 
+	// Recalculate tour distance after adding key point
+	recalculateTourDistance(tourID)
+
 	c.JSON(http.StatusCreated, keyPoint)
 }
 
@@ -240,6 +533,7 @@ func GetKeyPointsByTour(c *gin.Context) {
 
 func UpdateKeyPoint(c *gin.Context) {
 	keyPointID := c.Param("keyPointId")
+	tourID := c.Param("tourId") // Get tour ID from URL
 
 	image, _ := c.FormFile("image")
 
@@ -263,16 +557,24 @@ func UpdateKeyPoint(c *gin.Context) {
 		return
 	}
 
+	// Recalculate tour distance after updating key point
+	recalculateTourDistance(tourID)
+
 	c.JSON(http.StatusOK, keyPoint)
 }
 
 func DeleteKeyPoint(c *gin.Context) {
 	keyPointID := c.Param("keyPointId")
+	tourID := c.Param("tourId") // Get tour ID from URL
+
 	err := service.DeleteKeyPoint(keyPointID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
+
+	// Recalculate tour distance after deleting key point
+	recalculateTourDistance(tourID)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Ključna tačka je uspešno obrisana"})
 }
@@ -403,4 +705,147 @@ func DeleteReview(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Recenzija je uspešno obrisana"})
+}
+
+// GenerateTokens generates purchase tokens for multiple tours (SAGA endpoint)
+func GenerateTokens(c *gin.Context) {
+	var request model.TokenRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Neispravan format zahteva"})
+		return
+	}
+
+	response, err := service.GenerateTokensForTours(request.UserID, request.TourIDs)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, response)
+}
+
+// GetPurchasedTours returns all tours user has purchased
+func GetPurchasedTours(c *gin.Context) {
+	userID, exists := middleware.GetUserID(c)
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Korisnik nije autentifikovan"})
+		return
+	}
+
+	tours, err := service.GetUserPurchasedTours(userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, tours)
+}
+
+// DeleteTokens removes purchase tokens (SAGA rollback endpoint)
+func DeleteTokens(c *gin.Context) {
+	var request model.TokenRequest
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Neispravan format zahteva"})
+		return
+	}
+
+	err := service.DeleteTokensForRollback(request.UserID, request.TourIDs)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Tokeni su uspešno obrisani"})
+}
+
+// Create a new TourExecution (start tour)
+func CreateTourExecution(c *gin.Context) {
+    tourID := c.Param("tourId")
+    touristID, exists := middleware.GetUserID(c)
+    if !exists {
+        c.JSON(http.StatusUnauthorized, gin.H{"error": "Korisnik nije autentifikovan"})
+        return
+    }
+
+    var req struct {
+        Location struct {
+            Lat float64 `json:"lat"`
+            Lng float64 `json:"lng"`
+        } `json:"location"`
+    }
+    if err := c.ShouldBindJSON(&req); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Neispravan format zahteva"})
+        return
+    }
+
+    execution, err := service.CreateTourExecution(tourID, touristID, req.Location.Lat, req.Location.Lng)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+    c.JSON(http.StatusCreated, execution)
+}
+
+// Get TourExecution by ID
+func GetTourExecutionByID(c *gin.Context) {
+    executionID := c.Param("executionId")
+    objID, err := primitive.ObjectIDFromHex(executionID)
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Neispravan execution ID"})
+        return
+    }
+    execution, err := service.GetTourExecutionByID(objID)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+    c.JSON(http.StatusOK, execution)
+}
+
+// Update TourExecution status (complete/abandon)
+func UpdateTourExecutionStatus(c *gin.Context) {
+    executionID := c.Param("executionId")
+    var req struct {
+        Status string `json:"status"`
+    }
+    if err := c.ShouldBindJSON(&req); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Neispravan format zahteva"})
+        return
+    }
+
+    var status model.TourExecutionStatus
+    switch req.Status {
+    case string(model.Completed):
+        status = model.Completed
+    case string(model.Abandoned):
+        status = model.Abandoned
+    default:
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Neispravan status"})
+        return
+    }
+
+    err := service.UpdateTourExecutionStatus(executionID, status)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+    c.JSON(http.StatusOK, gin.H{"message": "Status updated"})
+}
+
+// Add completed key point to TourExecution
+func AddCompletedKeyPoint(c *gin.Context) {
+    executionID := c.Param("executionId")
+    var req struct {
+        KeyPointID string `json:"keyPointId"`
+    }
+    if err := c.ShouldBindJSON(&req); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Neispravan format zahteva"})
+        return
+    }
+    err := service.AddCompletedKeyPoint(executionID, req.KeyPointID)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+        return
+    }
+    c.JSON(http.StatusOK, gin.H{"message": "Key point added"})
 }

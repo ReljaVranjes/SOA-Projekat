@@ -1,7 +1,7 @@
 import api from '../api';
 
 export interface Blog {
-  id: string;
+  _id: string;
   authorId: string;
   title: string;
   description: string;
@@ -35,4 +35,15 @@ export const blogService = {
     const response = await api.post(`${prefix}/blogs/${blogId}/like`);
     return response.data;
   },
+
+  addComment: async (blogId: string, commentData: { text: string; userId: string }): Promise<{ comments: any[] }> => {
+  const response = await api.post(`${prefix}/comments/${blogId}`, commentData);
+  return response.data;
+  },
+
+// Get comments for a blog
+  getComments: async (blogId: string): Promise<any[]> => {
+    const response = await api.get(`${prefix}/comments/${blogId}`);
+    return response.data;
+  }
 };

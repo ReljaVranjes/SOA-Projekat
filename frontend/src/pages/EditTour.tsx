@@ -90,8 +90,14 @@ const EditTour: React.FC = () => {
       });
     };
     const fetchKeypoints = async () => {
-      const keyPoints = await toursService.getKeyPointsByTour(tourId!);
-      setKeypoints(keyPoints);
+      try {
+        const keyPoints = await toursService.getKeyPointsByTour(tourId!);
+        console.log('Fetched key points for tour', tourId, ':', keyPoints);
+        setKeypoints(keyPoints);
+      } catch (error) {
+        console.error('Failed to fetch key points:', error);
+        setKeypoints([]);
+      }
     };
     fetchTour();
     fetchKeypoints();
@@ -170,6 +176,23 @@ const EditTour: React.FC = () => {
   }, [keypoints]);
 
   const mapCenter: [number, number] = markers.length ? [markers[0].lat, markers[0].lng] : [43.8563, 18.4131]; // Sarajevo
+
+  // Helper function to format travel time
+  const formatTravelTime = (hours: number): string => {
+    if (hours === 0) return 'N/A';
+    if (hours < 1) {
+      const minutes = Math.round(hours * 60);
+      return `${minutes}min`;
+    }
+    if (hours < 24) {
+      const wholeHours = Math.floor(hours);
+      const minutes = Math.round((hours - wholeHours) * 60);
+      return minutes > 0 ? `${wholeHours}h ${minutes}min` : `${wholeHours}h`;
+    }
+    const days = Math.floor(hours / 24);
+    const remainingHours = Math.floor(hours % 24);
+    return `${days}d ${remainingHours}h`;
+  };
 
   // ===== TOUR handlers =====
   const handleTourChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -320,6 +343,14 @@ const EditTour: React.FC = () => {
               <p><strong>Price:</strong> ${(tour as any).price}</p>
               <p><strong>Duration:</strong> {(tour as any).duration} hours</p>
               <p><strong>Max People:</strong> {(tour as any).maxPeople}</p>
+              <p><strong>Distance:</strong> {(tour as any).distance ? `${(tour as any).distance.toFixed(2)} km` : 'No route'}</p>
+              {(tour as any).distance > 0 && (
+                <>
+                  <p><strong>🚶 Travel time on foot:</strong> {formatTravelTime((tour as any).travelTimeOnFoot || 0)}</p>
+                  <p><strong>🚴 Travel time by bike:</strong> {formatTravelTime((tour as any).travelTimeBike || 0)}</p>
+                  <p><strong>🚗 Travel time by car:</strong> {formatTravelTime((tour as any).travelTimeCar || 0)}</p>
+                </>
+              )}
               <p><strong>Level:</strong> {(tour as any).level}</p>
               <button onClick={openEditTourModal} className="bg-yellow-500 text-white px-4 py-2 rounded mt-4">Edit Tour</button>
             </div>

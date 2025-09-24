@@ -39,6 +39,9 @@ const TourDetails: React.FC = () => {
   const [isEditReviewModalOpen, setIsEditReviewModalOpen] = useState(false);
   const [editingReview, setEditingReview] = useState<Review | null>(null);
 
+  // State for purchased tours
+  const [purchasedTourIds, setPurchasedTourIds] = useState<string[]>([]);
+
   // Review form state
   const [reviewForm, setReviewForm] = useState({
     rate: 5,
@@ -53,7 +56,13 @@ const TourDetails: React.FC = () => {
       loadKeypoints();
       loadReviews();
     }
-  }, [tourId]);
+    // Fetch purchased tours for the user
+    if (user?.role === 'Tourist') {
+      toursService.getPurchasedTours()
+        .then(data => setPurchasedTourIds(data.map((t: any) => t.id)))
+        .catch(() => setPurchasedTourIds([]));
+    }
+  }, [tourId, user]);
 
   const loadTourData = async () => {
     const result = await handleApi(
@@ -167,9 +176,18 @@ const TourDetails: React.FC = () => {
     setIsEditReviewModalOpen(true);
   };
 
-  // Create map markers
+  // Helper to check if tour is purchased
+  const isTourPurchased = (tourId: string) => {
+    return purchasedTourIds.includes(tourId);
+  };
+
+  // Create map markers - only show markers for visible keypoints
   const markers = useMemo(() => {
-    return (keypoints || [])
+    const visibleKeypoints = user?.role === 'Tourist' && !isTourPurchased(tourId!)
+      ? (keypoints || []).slice(0, 1)
+      : (keypoints || []);
+
+    return visibleKeypoints
       .map((kp, i) => {
         const anyKp: any = kp;
         const lat = Number(anyKp.latitude);
@@ -202,6 +220,23 @@ const TourDetails: React.FC = () => {
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString();
+  };
+
+  // Helper function to format travel time
+  const formatTravelTime = (hours: number): string => {
+    if (hours === 0) return 'N/A';
+    if (hours < 1) {
+      const minutes = Math.round(hours * 60);
+      return `${minutes}min`;
+    }
+    if (hours < 24) {
+      const wholeHours = Math.floor(hours);
+      const minutes = Math.round((hours - wholeHours) * 60);
+      return minutes > 0 ? `${wholeHours}h ${minutes}min` : `${wholeHours}h`;
+    }
+    const days = Math.floor(hours / 24);
+    const remainingHours = Math.floor(hours % 24);
+    return `${days}d ${remainingHours}h`;
   };
 
   const renderStars = (rating: number) => {
@@ -258,6 +293,9 @@ const TourDetails: React.FC = () => {
             <div className="text-3xl font-bold text-blue-600">${tour.price}</div>
             <div className="text-gray-600">{tour.duration} hours</div>
             <div className="text-gray-600">Max {tour.maxPeople} people</div>
+            {tour.distance && tour.distance > 0 && (
+              <div className="text-gray-600">{tour.distance.toFixed(1)} km</div>
+            )}
           </div>
         </div>
         
@@ -272,6 +310,30 @@ const TourDetails: React.FC = () => {
             ))}
           </div>
         )}
+
+        {/* Travel Times Section */}
+        {tour.distance && tour.distance > 0 && (
+          <div className="bg-gray-50 rounded-lg p-4 mb-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-3">Travel Information</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="text-center">
+                <div className="text-2xl mb-1">🚶‍♂️</div>
+                <div className="text-sm text-gray-600">Walking</div>
+                <div className="font-medium">{formatTravelTime(tour.travelTimeOnFoot || 0)}</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl mb-1">🚴‍♂️</div>
+                <div className="text-sm text-gray-600">Cycling</div>
+                <div className="font-medium">{formatTravelTime(tour.travelTimeBike || 0)}</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl mb-1">🚗</div>
+                <div className="text-sm text-gray-600">Driving</div>
+                <div className="font-medium">{formatTravelTime(tour.travelTimeCar || 0)}</div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Key Points Section */}
@@ -280,8 +342,25 @@ const TourDetails: React.FC = () => {
         
         {keypoints && keypoints.length > 0 ? (
           <>
+            {/* Show message about keypoints visibility for tourists */}
+            {user?.role === 'Tourist' && !isTourPurchased(tourId!) && keypoints.length > 1 && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                <div className="flex items-center">
+                  <div className="text-yellow-600 mr-3">
+                    🔒
+                  </div>
+                  <div>
+                    <h4 className="text-yellow-800 font-medium">Limited Preview</h4>
+                    <p className="text-yellow-700 text-sm">
+                      You're seeing only the first key point. Purchase this tour to see all {keypoints.length} key points and their details.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-              {keypoints.map((kp, index) => {
+              {(user?.role === 'Tourist' && !isTourPurchased(tourId!) ? keypoints.slice(0, 1) : keypoints).map((kp, index) => {
                 const anyKp: any = kp;
                 const imageUrl = anyKp.imageURL ?? anyKp.image ?? null;
                 return (

@@ -23,9 +23,15 @@ export interface Tour {
   price: number;
   duration: number;
   maxPeople: number;
+  distance: number;
+  travelTimeOnFoot: number;
+  travelTimeBike: number;
+  travelTimeCar: number;
   guideID: string;
   createdAt: string;
   updatedAt: string;
+  publishedAt?: string;
+  archivedAt?: string;
 }
 
 export interface KeyPoint {
@@ -55,7 +61,8 @@ export const toursService = {
   // Tours
   getAllTours: async (): Promise<Tour[]> => {
     const response = await api.get(`${prefix}/tours`);
-    return response.data.tours;
+    console.log('DEBUG: API response:', response.data);
+    return response.data.tours || response.data;
   },
 
   getToursByGuide: async (guideId: string): Promise<Tour[]> => {
@@ -73,8 +80,22 @@ export const toursService = {
     return response.data;
   },
 
+  createTourWithKeyPoints: async (formData: FormData): Promise<Tour> => {
+    const response = await api.post(`${prefix}/tours`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+
   updateTour: async (tourId: string, tourData: Partial<Tour>): Promise<Tour> => {
     const response = await api.put(`${prefix}/tours/${tourId}`, tourData);
+    return response.data;
+  },
+
+  checkPublishRequirements: async (tourId: string): Promise<{ canPublish: boolean; missingRequirements: string[] }> => {
+    const response = await api.get(`${prefix}/tours/${tourId}/publish-requirements`);
     return response.data;
   },
 
@@ -89,7 +110,8 @@ export const toursService = {
   // Key Points
   getKeyPointsByTour: async (tourId: string): Promise<KeyPoint[]> => {
     const response = await api.get(`${prefix}/tours/${tourId}/keypoints`);
-    return response.data;
+    // Handle RPC response structure (has keypoints property) vs direct array
+    return response.data.keypoints || response.data;
   },
 
   createKeyPoint: async (tourId: string, keyPointData: FormData): Promise<KeyPoint> => {
@@ -142,4 +164,10 @@ export const toursService = {
   deleteReview: async (reviewId: string): Promise<void> => {
     await api.delete(`${prefix}/reviews/${reviewId}`);
   },
+
+  getPurchasedTours: async (): Promise<Tour[]> => {
+    const response = await api.get(`${prefix}/tours/purchased`);
+    return response.data;
+  }
+  
 };

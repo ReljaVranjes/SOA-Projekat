@@ -10,7 +10,12 @@ export const ROUTES = {
   PROFILE: '/profile',
   ADMIN: '/admin',
   BLOGS: '/blogs',
+  CART: '/cart',
+  ORDERS: '/orders',
+  FOLLOW_USERS: "/follow-users",
+  PURCHASED_TOURS: "/purchased-tours",
+  TOUR_EXECUTION: "/tour-execution/:executionId"
 } as const;
 
 export type RouteKey = keyof typeof ROUTES;
-export type RouteValue = typeof ROUTES[RouteKey];
+export type RouteValue = (typeof ROUTES)[RouteKey];

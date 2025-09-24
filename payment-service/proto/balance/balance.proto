@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package balance;
+
+option go_package = "./proto/balance";
+
+service BalanceService {
+  rpc GetBalance(GetBalanceRequest) returns (GetBalanceResponse) {}
+  rpc AddBalance(AddBalanceRequest) returns (AddBalanceResponse) {}
+  rpc DeductBalance(DeductBalanceRequest) returns (DeductBalanceResponse) {}
+}
+
+message GetBalanceRequest {
+  string user_id = 1;
+}
+
+message GetBalanceResponse {
+  double balance = 1;
+  bool success = 2;
+  string message = 3;
+}
+
+message AddBalanceRequest {
+  string user_id = 1;
+  double amount = 2;
+}
+
+message AddBalanceResponse {
+  double new_balance = 1;
+  bool success = 2;
+  string message = 3;
+}
+
+message DeductBalanceRequest {
+  string user_id = 1;
+  double amount = 2;
+}
+
+message DeductBalanceResponse {
+  double new_balance = 1;
+  bool success = 2;
+  string message = 3;
+}

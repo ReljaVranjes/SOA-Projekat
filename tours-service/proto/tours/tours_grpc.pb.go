@@ -19,7 +19,8 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ToursService_GetTours_FullMethodName = "/tours.ToursService/GetTours"
+	ToursService_GetTours_FullMethodName           = "/tours.ToursService/GetTours"
+	ToursService_GetKeyPointsByTour_FullMethodName = "/tours.ToursService/GetKeyPointsByTour"
 )
 
 // ToursServiceClient is the client API for ToursService service.
@@ -29,6 +30,7 @@ const (
 // Tours servis
 type ToursServiceClient interface {
 	GetTours(ctx context.Context, in *GetToursRequest, opts ...grpc.CallOption) (*GetToursResponse, error)
+	GetKeyPointsByTour(ctx context.Context, in *GetKeyPointsByTourRequest, opts ...grpc.CallOption) (*GetKeyPointsByTourResponse, error)
 }
 
 type toursServiceClient struct {
@@ -49,6 +51,16 @@ func (c *toursServiceClient) GetTours(ctx context.Context, in *GetToursRequest, 
 	return out, nil
 }
 
+func (c *toursServiceClient) GetKeyPointsByTour(ctx context.Context, in *GetKeyPointsByTourRequest, opts ...grpc.CallOption) (*GetKeyPointsByTourResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetKeyPointsByTourResponse)
+	err := c.cc.Invoke(ctx, ToursService_GetKeyPointsByTour_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ToursServiceServer is the server API for ToursService service.
 // All implementations must embed UnimplementedToursServiceServer
 // for forward compatibility.
@@ -56,6 +68,7 @@ func (c *toursServiceClient) GetTours(ctx context.Context, in *GetToursRequest, 
 // Tours servis
 type ToursServiceServer interface {
 	GetTours(context.Context, *GetToursRequest) (*GetToursResponse, error)
+	GetKeyPointsByTour(context.Context, *GetKeyPointsByTourRequest) (*GetKeyPointsByTourResponse, error)
 	mustEmbedUnimplementedToursServiceServer()
 }
 
@@ -68,6 +81,9 @@ type UnimplementedToursServiceServer struct{}
 
 func (UnimplementedToursServiceServer) GetTours(context.Context, *GetToursRequest) (*GetToursResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetTours not implemented")
+}
+func (UnimplementedToursServiceServer) GetKeyPointsByTour(context.Context, *GetKeyPointsByTourRequest) (*GetKeyPointsByTourResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetKeyPointsByTour not implemented")
 }
 func (UnimplementedToursServiceServer) mustEmbedUnimplementedToursServiceServer() {}
 func (UnimplementedToursServiceServer) testEmbeddedByValue()                      {}
@@ -108,6 +124,24 @@ func _ToursService_GetTours_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ToursService_GetKeyPointsByTour_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetKeyPointsByTourRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ToursServiceServer).GetKeyPointsByTour(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ToursService_GetKeyPointsByTour_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ToursServiceServer).GetKeyPointsByTour(ctx, req.(*GetKeyPointsByTourRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ToursService_ServiceDesc is the grpc.ServiceDesc for ToursService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -118,6 +152,10 @@ var ToursService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetTours",
 			Handler:    _ToursService_GetTours_Handler,
+		},
+		{
+			MethodName: "GetKeyPointsByTour",
+			Handler:    _ToursService_GetKeyPointsByTour_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
